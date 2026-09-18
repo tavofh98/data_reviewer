@@ -1,0 +1,13 @@
+[project]
+name = "explorar-qaqc"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "duckdb>=1.5.5",
+    "marimo>=0.24.2",
+    "matplotlib>=3.11.2",
+    "numpy>=2.5.3",
+    "pandas>=3.0.5",
+    "plotly>=7.1.0",
+    "scipy>=1.18.1",
+]
