@@ -1,11 +1,15 @@
 """Metadato de las estaciones meteorológicas: ubicación, altitud y sensores.
 
 Fuentes:
-- Coordenadas: `Estaciones AAQ.kmz` (raíz del workspace), convertidas a UTM 19S (EPSG:32719).
+- Coordenadas: `Estaciones AAQ.kmz` (raíz del workspace), convertidas a UTM 19S (EPSG:32719),
+  salvo donde un comentario diga que vienen de campo (cartel o GPS), que mandan sobre el KMZ.
   Las de `control_calidad_aaq/config.py` están desplazadas entre 8 y 69 km: no usarlas.
+  Una altitud de GPS no entra sin saber su datum: si difiere de `z_baro` en ~40 m es
+  elipsoidal y hay que restarle la ondulación del geoide (ver FINDINGS.md §2).
 - `z_dem`: SRTM 30 m (OpenTopoData) en el punto del KMZ, consultado el 2026-09-18.
 - `z_baro`: altitud que hace coherente la presión de la estación con la red (ver
-  `qc.barometric_elevation`). Es la que usa la reducción de presión.
+  `qc.barometric_elevation`). Es la que usa la reducción de presión. Altura geométrica, como el
+  DEM y el GPS: la hipsométrica usa la gravedad real de la latitud, no la estándar.
 - Sensores: tabla de partes de campo del usuario, completada con la huella de resolución de
   los datos (pluviómetro ClimaVUE 0.017 mm vs cubeta 0.1 mm). `# inferido` = fecha deducida
   de los datos, sin parte que la respalde.
@@ -55,49 +59,69 @@ def _torre(*extra: Sensor) -> tuple[Sensor, ...]:
     return (Sensor("viento", "torre", _INICIO), Sensor("lluvia", "young", _INICIO)) + extra
 
 
-# z_baro: salida de calibrate_baro.py el 2026-09-18 (últimos 365 días); |z_baro − z_dem| ≤ 30 m.
+# z_baro: salida de calibrate_baro.py el 2026-09-21 (últimos 365 días, gravedad real y offsets
+# de calibración aplicados); |z_baro − z_dem| ≤ 24 m, mediana 10 m.
 # No recalcular por rutina: si se recalcula, un cambio de nivel del barómetro se absorbe.
 STATIONS: dict[str, Station] = {
-    "Altarani":              Station(330585, 8107323, 3744, 3744, _torre()),
-    "Alto_Quellaveco":       Station(328544, 8106357, 4139, 4129, _torre()),
-    "Alto_Tala":             Station(321934, 8108393, 3454, 3452, (Sensor("viento", "torre", _INICIO),)),
+    "Altarani":              Station(330585, 8107323, 3744, 3743, _torre()),
+    "Alto_Quellaveco":       Station(328544, 8106357, 4139, 4130, _torre()),
+    "Alto_Tala":             Station(321934, 8108393, 3454, 3451, (Sensor("viento", "torre", _INICIO),)),
     "Apacheta":              Station(325432, 8100352, 3736, 3750,
                                      _cv(Sensor("lluvia", "young", "2025-12-01"))),  # inferido
-    "Calacaja":              Station(306544, 8096668, 2329, 2336, _cv()),
-    "Calientes1":            Station(317381, 8103660, 3097, 3116,
+    "Calacaja":              Station(306544, 8096668, 2329, 2332, _cv()),
+    "Calientes1":            Station(317381, 8103660, 3097, 3114,
                                      _cv(Sensor("lluvia", "young", "2025-05-01"))),  # inferido
-    "Camp_Quellaveco":       Station(326534, 8107949, 3598, 3628, _torre()),
-    # En el KMZ, Campamento Quellaveco comparte coordenada con Botadero Altaranito Norte: por confirmar.
-    "Cerro_Salviani":        Station(321190, 8104830, 3580, 3571,
+    # Coordenada confirmada en campo (cartel idéntico al KMZ, dos GPS a 10-16 m). La coordenada
+    # duplicada del KMZ es error de «Botadero Altaranito Norte», no de esta estación. El DEM lee
+    # 24 m bajo: plataforma de relleno posterior a SRTM. Ver FINDINGS.md §2.
+    "Camp_Quellaveco":       Station(326534, 8107949, 3598, 3622, _torre()),
+    "Cerro_Salviani":        Station(321190, 8104830, 3580, 3570,
                                      _cv(Sensor("lluvia", "young", "2026-02-12"),
                                          Sensor("termohigro", "hygrovue", "2026-02-12"))),
-    "Chalsos":               Station(322381, 8095276, 3336, 3337, _cv()),
-    "Chancado_primario":     Station(326017, 8108351, 3468, 3452,
+    "Chalsos":               Station(322381, 8095276, 3336, 3336, _cv()),
+    "Chancado_primario":     Station(326017, 8108351, 3468, 3451,
                                      _cv(Sensor("lluvia", "young", "2025-03-15"),
                                          Sensor("presion", "barometro", "2025-03-15"))),  # año inferido
     "Charaque":              Station(324788, 8110108, 3637, 3660,
                                      _cv(Sensor("lluvia", "young", "2025-12-01"))),  # inferido
-    "Cortadera":             Station(321591, 8099288, 3385, 3374, _torre()),
-    "DME3_Cortadera":        Station(314708, 8097374, 2900, 2922, _cv()),
-    "Dique_pie_botadero":    Station(323267, 8108169, 3330, 3320, _cv()),
+    "Cortadera":             Station(321591, 8099288, 3385, 3373, _torre()),
+    # Campo: dos GPS a 9 m entre sí, 30 m al oeste del KMZ. El DEM lee bajo porque el DME es
+    # relleno posterior a SRTM (2000); z_baro es coherente con ambos GPS. Ver FINDINGS.md §2.
+    "DME3_Cortadera":        Station(314679, 8097384, 2907, 2919, _cv()),
+    "Dique_pie_botadero":    Station(323267, 8108169, 3330, 3319, _cv()),
     "Huachunta":             Station(355567, 8153330, 4410, 4410, _torre()),
     "Ilo":                   Station(267774, 8034132, 46, None,
                                      _cv(Sensor("lluvia", "young", "2025-07-01"))),  # inferido; ClimaVUE sin confirmar
-    "Mina_Norte":            Station(327257, 8110014, 3972, None,
+    # T, HR y presión desde el ClimaVUE (2026-08-28; en la base desde 2026-08-30). z_baro contra 22
+    # vecinas con 22 días, no 365: recalcular con calibrate_baro.py al pasar de 30 días. El GPS de
+    # campo (326497, 8110200; 4004-4015 m elipsoidal → ~3970) cae a 782 m: sin confirmar si hubo
+    # reubicación, la coordenada no se cambia. Ver FINDINGS.md §2.
+    "Mina_Norte":            Station(327257, 8110014, 3972, 3983,
                                      (Sensor("viento", "torre", _INICIO), Sensor("lluvia", "young", _INICIO),
-                                      Sensor("viento", "climavue", "2026-08-28"))),
-    "Minas_Sur":             Station(329299, 8106779, 4119, 4110, _torre()),
+                                      Sensor("viento", "climavue", "2026-08-28"),
+                                      Sensor("termohigro", "climavue", "2026-08-28"),
+                                      Sensor("presion", "climavue", "2026-08-28"))),
+    "Minas_Sur":             Station(329299, 8106779, 4119, 4111, _torre()),
     "PMC-4_met":             Station(316969, 8096187, 2884, None, (Sensor("lluvia", "young", _INICIO),)),
     "Papujune":              Station(322640, 8106523, 3777, 3775, _torre()),
-    "Planta_Concentradora":  Station(324023, 8105777, 3868, 3873,
+    "Planta_Concentradora":  Station(324023, 8105777, 3868, 3874,
                                      _cv(Sensor("lluvia", "young", "2026-02-01"))),
     "Sarallenque":           Station(328371, 8108822, 3718, None, _torre()),
-    "Sarallenque_MQG-15-02": Station(328939, 8110942, 4251, 4263, _cv()),
-    "Tala-1":                Station(322943, 8108610, 3568, 3573, _torre()),
-    "Tala_Legal":            Station(321308, 8108678, 3306, 3317, _torre()),
-    "Titire":                Station(350186, 8168738, 4342, 4327,
+    "Sarallenque_MQG-15-02": Station(328939, 8110942, 4251, 4264, _cv()),
+    "Tala-1":                Station(322943, 8108610, 3568, 3572, _torre()),
+    "Tala_Legal":            Station(321308, 8108678, 3306, 3316, _torre()),
+    "Titire":                Station(350186, 8168738, 4342, 4328,
                                      _cv(Sensor("lluvia", "young", "2026-02-11"))),
-    "Vizcachas":             Station(355630, 8159304, 4387, 4388, _torre()),
+    # Coordenada de campo (cartel y GPS coinciden en 3 m); el punto del KMZ caía 22 m al SO.
+    "Vizcachas":             Station(355636, 8159325, 4388, 4390, _torre()),
+}
+
+
+# Corrección de barómetro según certificado de calibración: mbar a SUMAR a la lectura
+# (patrón − estación). La aplica `data.load`, así que la presión reducida y `z_baro` quedan las
+# dos en el valor verdadero. A 7.8 mbar/100 m, 0.43 mbar son 5.5 m de altitud.
+BARO_OFFSET: dict[str, float] = {
+    "Camp_Quellaveco": 0.43,   # calibración 2026: estación 662.80 mbar, patrón 663.23
 }
 
 

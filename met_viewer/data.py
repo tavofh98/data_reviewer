@@ -4,7 +4,7 @@ from __future__ import annotations
 import duckdb
 import pandas as pd
 
-from stations import DB_PATH, REPORTED, STATIONS
+from stations import BARO_OFFSET, DB_PATH, REPORTED, STATIONS
 
 TEMP, RH, BP, WS, WD = "AirTC_Avg", "RH_Avg", "BP_mbar_Avg", "WS_ms_Avg", "WindDir_Avg"
 VARIABLES = [TEMP, RH, BP, WS, WD]
@@ -32,5 +32,8 @@ def load(start: pd.Timestamp, end: pd.Timestamp) -> dict[str, pd.DataFrame]:
             continue
         cols = [v for v in VARIABLES if v in REPORTED[est]]
         if cols:
-            datos[est] = g.set_index("timestamp")[cols].astype("float64")
+            df_est = g.set_index("timestamp")[cols].astype("float64")
+            if est in BARO_OFFSET and BP in df_est:
+                df_est[BP] += BARO_OFFSET[est]
+            datos[est] = df_est
     return datos

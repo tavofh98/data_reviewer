@@ -43,7 +43,13 @@ SPIKE_NEIGHBOR_TOL = {TEMP: 2.0, RH: 10.0}   # desvío respecto a lo esperado po
 CALM_WS = 0.5                    # con viento más débil la dirección no significa nada
 
 # Reducción hidrostática de la presión
-RD, G, LAPSE = 287.05, 9.80665, 0.0065
+RD, LAPSE = 287.05, 0.0065
+# Gravedad normal (Somigliana, GRS80) en la latitud media de la red, −17.1°. Usar la g estándar
+# de 9.80665 (válida hacia 45°) sesga un 0.22 % y devolvería altura geopotencial, no geométrica:
+# el DEM y el GPS dan geométrica. La red abarca de 16.5° a 17.8° S, y esa franja vale 0.0025 %
+# (0.09 m a 3600 m), así que la latitud va fija y no por estación.
+GAMMA = 9.78479
+FREE_AIR = 3.086e-6              # caída de la gravedad con la altura, s⁻²
 Z_REF = 4000.0                   # nivel común (m) al que se reduce toda la red de montaña
 BARO_MAX_DEV = 2.0               # mbar, sobre la mediana móvil de 24 h del desvío
 BARO_RADIUS_KM = 25.0            # vecinas con las que se compara (la alta montaña está a ~60 km
@@ -56,15 +62,21 @@ RULES = ("ZERO_RECORD", "RANGE", "STUCK", "SPIKE", "BARO_DEV")
 
 # ── física ────────────────────────────────────────────────────────────────────
 
+def gravity(z, z_ref: float = Z_REF):
+    """Gravedad media de la columna entre z y z_ref, con la corrección de aire libre."""
+    return GAMMA - FREE_AIR * (np.asarray(z) + z_ref) / 2
+
+
 def reduce_pressure(p, t_celsius, z, z_ref: float = Z_REF):
     """Presión reducida de la altitud z a z_ref (aproximación hipsométrica).
 
     La temperatura media de la columna se estima con la de la estación y un gradiente
     estándar. Conviene pasar T suavizada (24 h): la columna libre no sigue el ciclo diurno
-    de la superficie.
+    de la superficie. `z` es altura geométrica, la misma que dan el DEM y el GPS.
     """
-    tm = np.asarray(t_celsius) + 273.15 - LAPSE * (z_ref - np.asarray(z)) / 2
-    return np.asarray(p) * np.exp(-G * (z_ref - np.asarray(z)) / (RD * tm))
+    z = np.asarray(z)
+    tm = np.asarray(t_celsius) + 273.15 - LAPSE * (z_ref - z) / 2
+    return np.asarray(p) * np.exp(-gravity(z, z_ref) * (z_ref - z) / (RD * tm))
 
 
 def barometric_elevation(p_med: pd.Series, t_med: pd.Series, z_dem: pd.Series) -> pd.Series:

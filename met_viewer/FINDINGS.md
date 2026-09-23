@@ -57,6 +57,97 @@ Excel de `anglo_reporte` no se toca.
 - Por confirmar: en el KMZ, «Campamento Quellaveco» tiene la misma coordenada que «Botadero
   Altaranito Norte».
 
+### Datos de campo: el datum antes que el número
+
+SRTM (EGM96), ASTER (EGM96) y Copernicus (EGM2008) son ortométricos, igual que `z_baro`, que
+sale de la presión: se comparan entre sí sin corrección. **Un GPS de mano, no.** Muchos dan
+altura elipsoidal, y aquí el geoide está unos +40 m por encima del elipsoide (N = +28 en Ilo,
++38 a +42 en la mina, +44 en Vizcachas/Huachunta, EGM2008). Antes de aceptar una altitud de
+campo: si difiere de `z_baro` en ~40 m, es elipsoidal; réstale N. Dos equipos distintos del
+mismo contratista venían configurados al revés, así que la comprobación va estación por
+estación, no por equipo.
+
+Verificado el 2026-09-21 con datos de campo:
+
+| Estación | Dato de campo | Veredicto |
+|---|---|---|
+| Vizcachas | cartel 355636 E, 8159328 N, 4390 m; GPS a 3 m, 4382.8 m (ortométrico) | **aceptado**: dos fuentes a 3 m entre sí, altitud a −5 m de `z_baro`. `stations.py` actualizado |
+| Vizcachas | primer GPS: 208 m al oeste, 4172 m | descartado: la posición es plausible (terreno llano), la altitud está 216 m baja |
+| Cortadera | cartel 321300 E, 8099690 N, 3295 m | **descartado**: su altitud queda 111 m por debajo del terreno en su propia coordenada |
+| Cortadera | fotos de GPS de varios meses, 3405–3420 m (elipsoidal) | al restar N = +40.2 dan 3365–3380, de acuerdo con Copernicus (3370–3380) y con `z_baro` (3374) |
+| DME3_Cortadera | dos GPS a 9 m entre sí, 30 m al oeste del KMZ: 2911.4 m (ortométrico) y 2949–2960 m (elipsoidal) | **aceptado**: leído cada uno en su datum convergen en 2910–2921, con `z_baro` = 2922 en el borde. `stations.py` actualizado |
+| Camp_Quellaveco | cartel idéntico al KMZ (0 m) y dos GPS a 10–16 m; altitudes de 3590 a 3640 | coordenada **confirmada**; altitudes descartadas por dispersión. La cerró el certificado del barómetro, no el GPS |
+| Charaque | GPS a 6 m del KMZ, 3627–3634 m | coordenada **confirmada**; la altitud es ortométrica sin duda (como elipsoidal caería 44–52 m bajo el terreno) y contradice `z_baro` = 3660. Ver la predicción abajo |
+| Calientes1 | GPS a 12 m del KMZ, sin altitud | coordenada **confirmada** |
+| Mina_Norte | GPS 326497 E, 8110200 N, 4004–4015 m (elipsoidal) | altitud **aceptada**: menos N ≈ 40 da 3964–3975, igual que SRTM (3969 en ese punto, 3972 en el KMZ) y 8–19 m bajo `z_baro` = 3983. Coordenada **en duda**: cae a 782 m del KMZ, que no es error de GPS; posible reubicación al instalar el ClimaVUE (2026-08-28). No se cambia hasta confirmarlo |
+
+**Mina_Norte ya tiene barómetro** (ClimaVUE, en la base desde 2026-08-30; antes la ingesta no
+cargaba su T, HR y presión). Con 22 días, reducida contra 22 estaciones con `z_baro` fijada
+(T media de 24 h, gravedad real), da `z_baro` = 3983 m: 3974–3986 con las 14 vecinas a ≤ 10 km y
+3974–3988 con toda la red hasta 63 km. Queda 11 m sobre el DEM, dentro de la tolerancia de la
+red y de la del sensor (±1 mbar del ClimaVUE ≈ ±13 m a 635 mbar). Recalcular con
+`calibrate_baro.py` al pasar de 30 días.
+
+**Ilo, contra el nivel del mar.** No entra en el ajuste de la red, así que se contrastó con la
+presión a nivel del mar de ERA5 (Open-Meteo), hora a hora, 2025-09 → 2026-09: altura
+geopotencial ≈ 40 m (mediana 39.5; 41 desde 2026-01), de acuerdo con el DEM (46). Los 16 m que
+se le suponían no se sostienen. En 2026-01 salta +11 m (≈ 1.3 hPa): cambio o ajuste del
+barómetro. El nivel absoluto depende de ERA5: 1 hPa son unos 8 m.
+
+**Predicción abierta sobre Charaque.** Su GPS (3627–3634) coincide con el DEM (3637) dentro de
+3–10 m y discrepa de `z_baro` (3660) en 26–33 m. Dos fuentes independientes contra una, y con
+una dispersión de GPS de solo 7 m. Si el GPS acierta, el barómetro de Charaque **lee 2.30 mbar
+por debajo del patrón**: pedir su certificado lo confirma o lo refuta. Nótese el contraste con
+Camp_Quellaveco, donde el certificado dio 0.43 mbar y ganó `z_baro`. No se toca `z_baro` con un
+número inferido del GPS: como `z_baro` absorbe el sesgo, cambiarla sin corregir a la vez la
+presión rompería la coherencia y dispararía `BARO_DEV`.
+
+**Las coordenadas del KMZ son buenas.** Cinco estaciones contrastadas en campo —Vizcachas,
+DME3_Cortadera, Camp_Quellaveco, Charaque y Calientes1— confirman el KMZ dentro de 3 a 34 m.
+Los residuales que quedan **no son errores de coordenada**: son relleno minero que el DEM no vio
+o sesgo de barómetro. La auditoría de coordenadas está cerrada salvo prueba en contra; lo que
+queda es calibración.
+
+**El DEM lee bajo donde hay obra.** En DME3 el GPS cae por encima del DEM (2907) y por debajo
+de `z_baro` (2922). No es un error de coordenada: un DME es un depósito de material excedente,
+un terraplén construido, y SRTM se levantó en el año 2000. Donde la estación se asienta sobre
+relleno minero, el DEM no lo ve y `z_baro` es la buena. Esto explica la firma común de los
+peores residuales —barómetro por encima del terreno—, y es la hipótesis principal para
+Camp_Quellaveco, que comparte coordenada con «Botadero Altaranito Norte». Corolario: en esas
+estaciones un DEM nunca va a cuadrar, así que el criterio es el GPS de campo más `z_baro`, no
+el DEM.
+
+### Estaciones por verificar, en orden
+
+Residual `z_baro` − `z_dem`, como lo imprime `calibrate_baro.py`: positivo = el barómetro sitúa
+la estación por encima del terreno del DEM, que es la firma del relleno minero.
+
+Ya no se piden coordenadas, sino **certificados de calibración**, por este orden:
+
+1. **Charaque** (+23 m): coordenada confirmada y GPS de acuerdo con el DEM. Predicción concreta
+   de 2.30 mbar, ver arriba. Es el que más rinde.
+2. **Calientes1** (+16 m): coordenada confirmada, sin altitud. Relleno o sesgo, sin distinguir.
+3. **Apacheta** (+14 m) y **Sarallenque_MQG-15-02** (+14 m): misma firma, sin dato de campo.
+4. **Chancado_primario** (−17 m): le cambiaron el barómetro el 2025-03-15, así que su `z_baro`
+   mezcla dos niveles. Aquí no basta un certificado: hay que recalibrar por tramos.
+5. **Titire** (−14 m) y **Cortadera** (−12 m): sin indicio adicional.
+
+Resueltas el 2026-09-21: **DME3_Cortadera** y **Camp_Quellaveco** (coordenada confirmada en
+campo y altitud cerrada por el certificado del barómetro; el DEM es el que lee 24 m bajo).
+
+**Las altitudes de GPS de mano no sirven para esto.** En Camp_Quellaveco, fotos tomadas en la
+misma estación con dos horas de diferencia dan de 3 590 a 3 640 m: 50 m de dispersión. La
+estación está al pie de una colina que le tapa cielo, y con menos satélites y peor geometría el
+error vertical se dispara (en un GPS de mano ya es de 1.5 a 3 veces el horizontal). De esas
+fotos se aprovecha la posición horizontal, que confirmó la coordenada a 10–16 m; la altitud, no.
+
+Sin barómetro reducible, es decir sin nada contra lo que contrastar, y tres de ellas en terreno
+accidentado donde el DEM es lo menos fiable: **Sarallenque** (relieve 99 m), **PMC-4_met**
+(71 m) e **Ilo**. Aquí un dato de campo vale el doble. (Mina_Norte salió de esta lista el
+2026-09-21, al empezar a registrar presión.)
+
+ASTER lee unos 7 m por debajo de SRTM en toda la red: para comparar, SRTM.
+
 ---
 
 ## 3. Presión: reducción hidrostática
@@ -64,10 +155,37 @@ Excel de `anglo_reporte` no se toca.
 Cada presión se reduce a 4 000 m con la ecuación hipsométrica (temperatura de la columna a
 partir de la T de la estación suavizada 24 h y un gradiente estándar) usando `z_baro` fija.
 
+**La gravedad no es constante** (corregido el 2026-09-21). Con `g₀` = 9.80665 la hipsométrica
+devuelve altura *geopotencial*, mientras que el DEM y el GPS dan *geométrica*: son cosas
+distintas. Ahora se usa la gravedad normal de Somigliana en la latitud media de la red
+(−17.1° → 9.78479, un 0.22 % menos) más la corrección de aire libre (3.086·10⁻⁶ s⁻²). El sesgo
+constante lo reabsorbe el anclaje, así que lo que queda es una inclinación de 7 m a lo largo de
+los 2 080 m de desnivel de la red: las estaciones bajas bajan hasta 5.5 m y las altas suben
+hasta 1.5 m. La latitud va fija: la franja de 16.5° a 17.8° S vale 0.0025 % (0.09 m a 3 600 m).
+
+Mejora medible contra las tres estaciones verificadas en campo — error medio de 4.2 m a 1.2 m:
+
+| Estación | Campo | con `g` constante | con `g` real |
+|---|---|---|---|
+| Vizcachas | 4390 (cartel) | 4388 | **4390** |
+| DME3_Cortadera | 2910–2921 (dos GPS) | 2923 (fuera) | **2919** |
+| Cortadera | 3365–3380 (GPS + Copernicus) | 3376 | **3373** |
+
 - Con la altitud declarada las estaciones difieren 160 mbar por hora; con la barométrica, 2.3 mbar
   (IQR 0.4). **La presión no necesita grupos**: se muestra como desvío respecto a las vecinas.
-- `z_baro` se calculó el 2026-09-18 con los últimos 365 días y **no debe recalcularse por
+- `z_baro` se calculó el 2026-09-21 con los últimos 365 días y **no debe recalcularse por
   rutina**: si se recalcula, un cambio de nivel del barómetro se absorbe y deja de verse.
+
+**El punto ciego del método, y cómo se cierra.** La sensibilidad es de 7.8 mbar por cada 100 m,
+así que un sesgo de calibración del barómetro es matemáticamente indistinguible de un cambio de
+altitud: 2.35 mbar se leen como 30 m, y el ajuste los absorbe enteros dentro de `z_baro` sin que
+nada lo delate. Por eso `z_baro` no puede usarse como prueba de sí misma. Lo único que lo cierra
+es un certificado de calibración, que mide el sesgo directamente. El de Camp_Quellaveco (2026:
+estación 662.80 mbar, patrón 663.23) dio 0.43 mbar = 5.5 m, cuatro veces menos de lo que haría
+falta para dudar de su altitud. **Pedir los certificados del resto de barómetros es lo que más
+rinde ahora**: convertiría `z_baro` de cantidad ajustada en cantidad medida para toda la red.
+Los offsets se anotan en `stations.py` → `BARO_OFFSET` y los aplica `data.load`, de modo que la
+presión reducida y `z_baro` quedan las dos en el valor verdadero.
 - La alta montaña (a ~60 km de la mina) oscila ±0.8 mbar con la estación respecto a la mina: es
   diferencia regional real. Por eso cada estación se compara solo con vecinas a < 25 km.
 
