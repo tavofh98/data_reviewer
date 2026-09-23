@@ -1,6 +1,6 @@
 # Visor de meteorología por grupos — hallazgos y decisiones
 
-_Actualizado: 2026-09-18 · Base: `database_duck/anglo_ambiental.db` (datos 2019-09 → 2026-09-18)_
+_Actualizado: 2026-09-23 · Base: `database_duck/anglo_ambiental.db` (datos 2019-09 → 2026-09-23)_
 
 Objetivo: un visor HTML por matriz donde las estaciones se comparan dentro de grupos de
 comportamiento similar, sobre datos que pasaron un control de calidad automático fuerte.
@@ -37,6 +37,7 @@ Los grupos salen de `groups.py` si existe (curado a mano) o de `groups_draft.py`
 | `grouping.py` | agrupamiento por correlación de anomalías |
 | `viewer.py`, `main.py` | HTML y CLI |
 | `calibrate_baro.py` | altitud barométrica de cada estación |
+| `WIND_REVIEW.md` | metodología y criterios para revisar los datos de viento |
 
 La norma de qué variables importan es `anglo_reporte/matrices.py` → `VARIABLES_REPORTE`. El
 Excel de `anglo_reporte` no se toca.
@@ -226,6 +227,14 @@ Casos conocidos que el QC detecta (verificados sobre el historial completo):
 - **Corte:** dendrograma de enlace promedio, partiendo solo las ramas de más de 6 estaciones. Una
   estación suelta se une al grupo de su pareja más correlacionada o, si está lleno, forma grupo
   con sus 2 más parecidas (puede aparecer en dos grupos). Ilo va aparte.
+- **Viento: por régimen, no por anomalías** (2026-09-23). Parecido = coseno entre los ciclos
+  diarios medios del vector de procedencia (u y v por hora). No depende de la escala, así que la
+  altura del sensor no manda. La correlación de anomalías de velocidad era débil (r típica
+  0.15–0.35 a < 25 km) y juntaba regímenes opuestos (Altarani–Charaque–Sarallenque: −0.26). Fuera
+  del cálculo, los tramos de `stations.WIND_EXCLUDED` (Sarallenque desde 2025-07-14, Mina_Norte y
+  Chalsos completas, el tramo pegado de Huachunta). La estación con parecido medio < 0.60 al
+  resto de su grupo va sola (Dique_pie_botadero: 0.55). Grupos 2025-09 → 2026-09: cos medio 0.92,
+  0.83, 0.92, 0.90 y 0.70 (Calacaja–DME3).
 - La distancia y el desnivel pesan parecido en la similitud entre pares (Spearman: velocidad
   −0.55 / −0.50, lluvia −0.67 / −0.46). Con coordenadas malas parecía que solo importaba el desnivel.
 
@@ -294,6 +303,7 @@ rugosidad que no se conoce).
 | Dique_pie_botadero | viento | ciclo invertido (fuerte de noche 4.7–5.1 m/s, flojo a mediodía 2.2), nunca baja de ~1.1 m/s, constancia direccional 0.98, no correlaciona con ninguna vecina | flujo de drenaje real al pie del botadero o fallo del anemómetro |
 | Chalsos | dirección | ~270° de noche y 120–160° de día, al revés que Calientes1/Cortadera/Tala_Legal (~100° / ~270°) | veleta invertida o mal orientada |
 | Huachunta | dirección | veleta pegada en ~152° (mar–may 2026); constancia direccional = 1.00 | fallo mecánico |
+| Sarallenque | viento | desde 2025-07-14 dirección y velocidad cambian a la vez; de noche viene de ~250° en vez de ~78°; sector S–SO–O vacío | traslado del shelter girado 180° y a un punto con obstáculo al S–SO–O (ver §9) |
 | Papujune | T | 132 h con 0.0 exacto (abr-2026) | sensor caído (descartado por `STUCK`) |
 | Charaque | HR | 752 h en 101.2 % (ene–abr 2025), aceptadas por el rango | calibración |
 | Apacheta / Minas_Sur | HR | cambio de nivel en ene-2026 / may-2026 | cambio de sensor (Apacheta: mismo mes que su pluviómetro) |
@@ -305,6 +315,9 @@ cálida, con el mismo ciclo diario. Sus parejas son Calientes1, Chalsos y DME3.
 ---
 
 ## 9. Viento (en curso)
+
+Los criterios para revisar el viento de la red y diagnosticar un caso sospechoso están en
+[`WIND_REVIEW.md`](WIND_REVIEW.md).
 
 La serie horaria de velocidad se ve demasiado ruidosa. Propuesta, contrastada con fallos
 conocidos:
@@ -331,6 +344,72 @@ Referencias verificadas (EPA):
   of the w[ind vane] …»
   https://www.epa.gov/sites/default/files/2020-10/documents/volume_iv_meteorological_measurements.pdf
 
+
+### Sarallenque: traslado del shelter en julio de 2025
+
+Sensor: WindSonic en un mástil del Shelter 04 (remolque), a ~4 m. Reporte descriptivo (solo datos
+y gráficos: mapa, rosas, series y fotos): `sarallenque_wind/reporte_viento_sarallenque.html`. Diagnóstico con los criterios E y F de
+`WIND_REVIEW.md`.
+
+**Verificado en los datos.**
+
+- **Cambio el 2025-07-14 en dirección y velocidad a la vez.** Hasta entonces seguía su ladera,
+  que sube hacia 48° (NE): de día el viento venía de ~245° y de noche de ~78°, como sus vecinas.
+  Sarallenque_MQG-15-02 (2.2 km) y Altarani (2.7 km) no cambian en esas fechas.
+- **Tramos después del cambio:**
+
+  | Tramo | Estado |
+  |---|---|
+  | 2025-07-14 → 2025-09-14 | inestable: la dirección nocturna deriva de 138° a 293° y el borde inferior de la serie salta de 52° a 151° de semana en semana |
+  | 2025-09-15 → 2025-10-05 | estable; empieza con la calibración de mediados de septiembre |
+  | 2025-10-06 → ~2025-11-16 | estable, girado ~−50° respecto al anterior: borde inferior, borde superior, día y noche bajan 45–70° a la vez; MQG no se mueve |
+  | desde ~2025-11-17 | estable, girado ~+30° respecto al anterior; borde inferior fijo en 111° durante 13 semanas |
+
+- **Giro de 180° (±10°), medido en la noche** (periodos limpios 2025-05-01 → 06-30 y
+  2025-11-17 → 2026-01-09). Girando 180° el histograma nocturno, la similitud con el de antes pasa
+  de 0.01 a 0.98. Hora a hora, la diferencia entre 22 y 08 h va de 172° a 184°. Las vecinas giran
+  de noche entre 0° y −20° entre esos mismos periodos, así que no es la estación.
+- **De día, aunque se corrija el giro, no es comparable.** Tras restar 180°, el viento de día viene
+  de ~299° contra ~247° antes (las vecinas se mueven ±20°). El sector S–SO–O (165–285°), que traía
+  el 39 % de las horas con viento, pasa a 0 %, y el de 300° sube del 0.4 % al 52 %. La velocidad de
+  día sube un 30 % respecto a MQG; la de noche apenas cambia.
+
+**Hipótesis sobre las causas**, de más a menos probable:
+
+1. **El shelter se trasladó en julio de 2025 y quedó orientado al revés.** La marca de norte del
+   WindSonic va referida al mástil, que va sujeto al shelter, así que giró con él. El usuario
+   revisó una foto anterior a julio de 2025 en la que el shelter está orientado casi en sentido
+   opuesto. Explica el giro de 180° y que la noche, restándolo, coincida con la de antes.
+2. **El punto nuevo está más cubierto: hay un obstáculo al S–SO–O.** El viento de ese sector ya no
+   llega; rodea el obstáculo y entra por su borde, en ~290° (el borde inferior fijo de 111° sin
+   corregir). Candidatos: el talud cortado que se ve detrás del shelter en la foto f2 (mirando al
+   sur) y, más lejos, el tajo, que queda al O y al SO. Esto explica que el día no coincida tras
+   corregir el giro. La subida de la velocidad diurna podría ser el viento acelerándose al rodear
+   el obstáculo, pero no está comprobado.
+3. **Reorientaciones posteriores sin registrar.** Los giros de ~−50° del 6 de octubre y de ~+30°
+   hacia el 17 de noviembre de 2025 son movimientos del mástil o del sensor: sujeción floja o
+   ajustes en visitas de campo.
+4. **Contribuyen poco o nada:** la inclinación del shelter (afecta algo a la velocidad y poco a la
+   dirección); el enmallado al este (el drenaje nocturno del NE sigue llegando); un cambio regional
+   o estacional (las vecinas no lo muestran). Descartado: un fallo de veleta, porque el WindSonic
+   no tiene partes móviles.
+
+**Coordenada.** El GPS de la foto de 2026-08 cae a 11 m de la coordenada de `stations.py` (KMZ).
+Con el traslado de julio de 2025, las dos corresponden al punto **nuevo**; la ubicación anterior
+no se conoce.
+
+**Tratamiento:**
+
+| Tramo | Dirección de noche | Dirección de día | Velocidad |
+|---|---|---|---|
+| hasta 2025-07-13 | válida | válida | válida |
+| 2025-07-14 → 2025-09-14 | no válida | no válida | no válida |
+| 2025-09-15 → ~2025-11-16 | corregible por tramo cuando se mida el ángulo (~200° y ~140° según las estimaciones semanales) | no comparable | no comparable |
+| desde ~2025-11-17 | válida restando 180° (confirmar con brújula) | no comparable: sector S–O tapado | no comparable de día (+30 %) |
+
+Hasta confirmarlo en campo, Sarallenque queda fuera de cualquier agrupación de viento desde el
+2025-07-14.
+
 ---
 
 ## 10. Pendientes
@@ -340,3 +419,4 @@ Referencias verificadas (EPA):
 - Regla de QC para escalones de nivel en T y HR (caso Camp_Quellaveco), comparando con vecinas.
 - Confirmar con partes de campo los casos de §8 y la coordenada de Campamento Quellaveco.
 - Lluvia y radiación: pendientes.
+- Sarallenque: medir con brújula la marca de norte del WindSonic, conseguir la fecha y la ubicación anterior del traslado de julio de 2025 y, con eso, añadir una corrección de dirección por tramos en `stations.py` (como `BARO_OFFSET`).

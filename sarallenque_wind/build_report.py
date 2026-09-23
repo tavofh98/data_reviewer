@@ -1,4 +1,6 @@
-"""Reporte del viento de Sarallenque: cambio de régimen de 2025-07-14 frente a sus vecinas.
+"""Reporte descriptivo del viento de Sarallenque y sus estaciones de referencia, antes y después de 2025-07-14.
+
+Solo datos y gráficos; la interpretación vive en met_viewer/FINDINGS.md §9.
 
 Uso (desde explorar_qaqc/):
     uv run python sarallenque_wind/build_report.py
@@ -452,7 +454,7 @@ def _fmt_dir(v: float) -> str:
 
 
 def summary_table(summ: pd.DataFrame, relief: dict[str, dict]) -> str:
-    head = ("<tr><th>Estación</th><th>Terreno sube hacia</th><th>Esperado día / noche</th><th>Periodo</th>"
+    head = ("<tr><th>Estación</th><th>Terreno sube hacia</th><th>Periodo</th>"
             "<th>Día: desde</th><th>Noche: desde</th><th>Vel. día</th><th>Vel. noche</th><th>Horas día / noche</th></tr>")
     rows = []
     for est in STATIONS_SHOWN:
@@ -460,8 +462,7 @@ def summary_table(summ: pd.DataFrame, relief: dict[str, dict]) -> str:
         sub = summ[summ["estación"] == est]
         for k, (_, r) in enumerate(sub.iterrows()):
             first = (f'<td rowspan="{len(sub)}"><b>{html.escape(est)}</b></td>'
-                     f'<td rowspan="{len(sub)}">{_fmt_dir(up)} ({relief[est]["slope"]:.0f}°)</td>'
-                     f'<td rowspan="{len(sub)}">{_fmt_dir((up + 180) % 360)} / {_fmt_dir(up)}</td>') if k == 0 else ""
+                     f'<td rowspan="{len(sub)}">{_fmt_dir(up)} ({relief[est]["slope"]:.0f}°)</td>') if k == 0 else ""
             rows.append(f"<tr>{first}<td>{r['periodo']}</td><td>{_fmt_dir(r['dir día'])}</td>"
                         f"<td>{_fmt_dir(r['dir noche'])}</td><td class='num'>{r['vel día']:.1f}</td>"
                         f"<td class='num'>{r['vel noche']:.1f}</td>"
@@ -502,8 +503,6 @@ def build() -> None:
     summ = summary(wind)
     dirs, speeds = weekly(wind)
 
-    s = summ.set_index(["estación", "periodo"])
-    sar_b, sar_a = s.loc[(TARGET, "antes")], s.loc[(TARGET, "después")]
     print(summ.round(1).to_string())
     print({k: (round(v["slope"]), round(v["uphill"]), round(v["tpi_1500"])) for k, v in relief.items()})
 
@@ -513,24 +512,19 @@ def build() -> None:
         change=f"{CHANGE:%Y-%m-%d}",
         antes=f"{PERIODS['antes'][0]:%Y-%m-%d} → {PERIODS['antes'][1] - pd.Timedelta(days=1):%Y-%m-%d}",
         despues=f"{PERIODS['después'][0]:%Y-%m-%d} → {PERIODS['después'][1] - pd.Timedelta(days=1):%Y-%m-%d}",
-        sar_up=_fmt_dir(relief[TARGET]["uphill"]), sar_slope=f"{relief[TARGET]['slope']:.0f}",
-        sar_day_b=_fmt_dir(sar_b["dir día"]), sar_night_b=_fmt_dir(sar_b["dir noche"]),
-        sar_day_a=_fmt_dir(sar_a["dir día"]), sar_night_a=_fmt_dir(sar_a["dir noche"]),
-        sar_vd_b=f"{sar_b['vel día']:.1f}", sar_vd_a=f"{sar_a['vel día']:.1f}",
-        sar_vn_b=f"{sar_b['vel noche']:.1f}", sar_vn_a=f"{sar_a['vel noche']:.1f}",
         map=div(rose_map(wind, relief)),
         summary=summary_table(summ, relief),
         weekly_dir=div(fig_dir), weekly_speed=div(fig_speed),
         roses=div(rose_grid(wind)),
         relief=relief_table(relief),
         photo_f1=_img(HERE / "photos" / "sarallenque_shelter_f1.jpeg",
-                      "Sarallenque, foto f1 (2026-05-09), mirando casi al norte: shelter inclinado, "
-                      "enmallado a la derecha (este), quebrada al fondo."),
+                      "Sarallenque, foto f1 (2026-05-09), orientada aproximadamente al norte. "
+                      "Enmallado a la derecha (este)."),
         photo_f2=_img(HERE / "photos" / "sarallenque_shelter_f2.jpeg",
-                      "Sarallenque, foto f2 (2026-08-18), mirando casi al sur: enmallado a la izquierda (este), "
-                      "talud cortado detrás, poste y torre de alta tensión. GPS 17.09854 S, 70.61307 W."),
+                      "Sarallenque, foto f2 (2026-08-18), orientada aproximadamente al sur. "
+                      "Enmallado a la izquierda (este). GPS 17.09854 S, 70.61307 W."),
         photo_mn=_img(HERE / "photos" / "minas_norte_shelter.jpeg",
-                      "Mina_Norte (2026-09-01): Shelter 05 sobre remolque, ClimaVUE en mástil a 3.9–4.1 m. "
+                      "Mina_Norte (2026-09-01): Shelter 05 sobre remolque; ClimaVUE en mástil a 3.9–4.1 m del suelo. "
                       "GPS 326497 E, 8110200 N."),
     )
     OUTPUT.write_text(PAGE_HTML.format(body=body, generated=f"{pd.Timestamp.now():%Y-%m-%d %H:%M}"), encoding="utf-8")
@@ -564,160 +558,74 @@ PAGE_HTML = """<!DOCTYPE html><html lang="es"><head><meta charset="utf-8">
 
 
 TEXT = """
-<h1>Viento de Sarallenque: cambio de régimen desde el {change}</h1>
-<p class="lead">Desde el {change}, la dirección y la velocidad del viento de Sarallenque cambian
-<b>a la vez</b>. Antes, el viento seguía la ladera como el de sus vecinas; después, sopla casi al
-revés. Sus vecinas no cambian en esas fechas. La causa más probable es un cambio en el montaje del
-sensor: el shelter o el mástil se giraron, o el sensor se remontó. Hasta confirmarlo, la
-dirección de Sarallenque desde el {change} no es fiable.</p>
+<h1>Viento de Sarallenque y estaciones de referencia</h1>
+<p class="lead">Dirección y velocidad del viento de Sarallenque y de cuatro estaciones cercanas en
+dos periodos: <b>antes</b> ({antes}) y <b>después</b> ({despues}) de la fecha de referencia
+{change}. El reporte reúne rosas de viento de día y de noche, series semanales, el relieve del
+entorno y fotos de campo. La interpretación está en <code>met_viewer/FINDINGS.md</code> §9, y los
+criterios de revisión en <code>met_viewer/WIND_REVIEW.md</code>.</p>
 
 <section>
 <h2>1. Mapa: rosas de día y de noche en cada estación</h2>
-<p>Cada rosa está dibujada en la posición de su estación. Los pétalos apuntan <b>hacia donde viene</b>
-el viento y su radio es proporcional a la raíz de la frecuencia (el área, a la frecuencia). Naranja:
-día (10–17 h). Azul: noche (22–06 h). La línea negra marca hacia dónde sube el terreno según el
-DEM (plano ajustado entre 90 y 360 m). Con los botones se cambia entre <b>antes</b> ({antes}) y
-<b>después</b> ({despues}), y entre el fondo topográfico y el satélite.</p>
-<p class="muted">Lectura esperada en ladera: de día el aire sube la pendiente, así que el pétalo
-naranja sale del lado contrario a la línea negra; de noche el aire baja, así que el pétalo azul
-sale del mismo lado que la línea. Mina_Norte se dibuja en la coordenada del KMZ; su posible
-ubicación nueva (foto del 2026-09-01) está en gris.</p>
+<p>Cada rosa está en la posición de su estación. Los pétalos apuntan <b>hacia donde viene</b> el
+viento (0° = norte, en sentido horario), y su radio es proporcional a la raíz de la frecuencia, así
+que el área es proporcional a la frecuencia. Naranja: día (10–17 h). Azul: noche (22–06 h). La
+flecha negra marca hacia dónde sube el terreno según el DEM (plano ajustado entre 90 y 360 m). Los
+botones cambian entre los dos periodos y entre el fondo topográfico y el satélite.</p>
+<p class="muted">Las estaciones se dibujan en la coordenada de <code>stations.py</code>. El círculo
+gris marca el GPS de la foto de campo de Mina_Norte del 2026-09-01, a 782 m de esa coordenada.</p>
 {map}
 </section>
 
 <section>
-<h2>2. Hallazgos verificados</h2>
-<ol>
-<li><b>El cambio es simultáneo en dirección y velocidad.</b> Antes: de día el viento venía de
-{sar_day_b} y de noche de {sar_night_b}. Después: de día viene de {sar_day_a} y de noche de
-{sar_night_a}. La velocidad media sube de {sar_vd_b} a {sar_vd_a} m/s de día y de {sar_vn_b} a
-{sar_vn_a} m/s de noche. En la serie semanal (abajo), la dirección nocturna se sale de su rango
-habitual la semana del {change}, deriva hasta octubre y se estabiliza desde noviembre de 2025.</li>
-<li><b>Ninguna vecina cambia en julio de 2025.</b> Las dos más cercanas, Sarallenque_MQG-15-02
-(2.2 km) y Altarani (2.7 km), mantienen su régimen con menos de 12° de diferencia entre periodos.
-Lo de Sarallenque es local; no es un cambio regional ni estacional. Alto_Quellaveco y Mina_Norte
-sí cambian, pero en otras fechas y por otros motivos (§4).</li>
-<li><b>El sitio no se ha movido.</b> El GPS de la foto f2 (2026-08-18) cae a 11 m de la coordenada
-de <code>stations.py</code>, que viene del KMZ.</li>
-<li><b>El DEM confirma el relieve que se ve en las fotos.</b> El terreno sube hacia {sar_up} con
-{sar_slope}° de pendiente y cae al S, al SO y al O (de −18 a −30 m a 90 m; de −91 a −144 m a
-360 m). Al norte hay una quebrada: −17 m a 180 m y +244 m a 720 m, que es el acantilado del fondo
-de la foto f1. Con celdas de 30 m, SRTM ve la subida hacia el este, pero no el enmallado ni el
-talud de 10 m.</li>
-<li><b>Las vecinas siguen su ladera.</b> En Altarani (fondo de valle abierto al NO, en los dos
-periodos) y en Alto_Quellaveco (se sube desde el NO; desde abr-2025), el viento de día viene del
-lado bajo y el de noche del lado alto, a pocos grados de lo esperado. Sarallenque también lo cumplía <i>antes</i> del cambio.
-<i>Después</i>, lo contradice.</li>
-</ol>
-</section>
-
-<section>
-<h2>3. Hipótesis</h2>
-<p><span class="tag">más probable</span><b>Cambio de montaje u orientación del sensor en julio de
-2025.</b> Un WindSonic mide la dirección respecto a su marca de norte: si se gira el mástil o el
-shelter, que va sobre remolque, gira toda la rosa. Un remontaje a otra altura o posición sobre el
-shelter cambia además la exposición, y con ella la velocidad. Es la única hipótesis que explica
-el salto simultáneo de dirección y velocidad con el sitio en la misma coordenada. Lo que no
-encaja del todo: el desfase no es constante (≈110° de día, ≈185° de noche), así que el giro no
-basta por sí solo. La distorsión de los obstáculos próximos podría explicar el resto.</p>
-<p><span class="tag">contribuye, no explica</span><b>Obstáculos: enmallado contiguo al este y
-talud a ~10 m.</b> Frenan y desvían el viento del este, que aquí es el nocturno, y dejan el flujo
-más abierto desde el oeste. Pero un obstáculo al este no puede crear viento del SE de día ni
-invertir el régimen. Si el enmallado o el corte del talud se hicieron en julio de 2025, pesarían
-más en el cambio de velocidad.</p>
-<p><span class="tag">por verificar</span><b>El tajo y las obras de la mina, que el DEM no ve.</b> En la
-vista satélite del mapa, el tajo de Quellaveco queda a unos cientos de metros al oeste y suroeste
-de Sarallenque, y Mina_Norte está en su borde norte. SRTM es del año 2000, anterior al tajo, así
-que el relieve real al O y al SO es hoy mucho más profundo que el de la tabla §9. El avance de una
-fase del tajo o un corte cerca de la estación (el talud «calado» de las fotos) cambia el flujo
-local y podría producir un salto en una fecha concreta. No se ve por qué invertiría el régimen
-diario, pero no puede descartarse sin las fechas de avance del tajo cerca de la estación en
-julio de 2025. La fecha de la imagen de Esri no se conoce.</p>
-<p><span class="tag">menor</span><b>Inclinación del shelter.</b> Con pocos grados, un sónico
-inclinado subestima algo la velocidad horizontal y apenas cambia la dirección. No explica un giro
-de más de 100°.</p>
-<p><span class="tag">descartada</span><b>Fallo de veleta.</b> El WindSonic no tiene partes móviles.
-Además, la velocidad cambió a la vez que la dirección.</p>
-</section>
-
-<section>
-<h2>4. Otras anomalías en las estaciones de referencia</h2>
-<p>Salieron al comparar y no tienen que ver con Sarallenque, pero afectan a su uso como referencia.
-Medias vectoriales mensuales:</p>
-<ul>
-<li><b>Alto_Quellaveco cambia en marzo–abril de 2025.</b> De jul-2024 a mar-2025, el viento de día
-venía de 196–254° y el nocturno era inestable (de 326° a 133° según el mes). Desde abr-2025, de día
-viene de 258–316° y de noche de 45–145°. Su ladera, que sube hacia 109°, predice ~289° de día y
-~109° de noche, así que el régimen <i>actual</i> es el coherente y el anterior no. Por eso su rosa
-«antes» se aparta de lo esperado. Causa desconocida.</li>
-<li><b>Mina_Norte tiene varios episodios.</b> Oct–dic 2024: de día viene de 113–161° (normalmente
-~240–260°). Dic-2025 → abr-2026: de día viene de 185–194° y de noche de 144–166°, y su velocidad
-cae de ~0.75 a ~0.55 veces la de Sarallenque_MQG. May–ago 2026: de noche viene de 311–343°.
-Sep-2026, ya con el ClimaVUE: de día 272°, de noche 78°. Encaja con un shelter sobre remolque
-trasladado más de una vez. Sus dos periodos mezclan ubicaciones, así que no sirve como referencia
-hasta tener las fechas de traslado.</li>
-</ul>
-</section>
-
-<section>
-<h2>5. Qué hace falta para cerrarlo</h2>
-<ul>
-<li>El registro de campo de lo que se hizo con el Shelter 04 y su mástil a mediados de julio de
-2025: traslado, giro, remontaje o cambio de sensor.</li>
-<li>Comprobar en sitio hacia dónde apunta la marca de norte del WindSonic, con brújula corregida
-por declinación.</li>
-<li>La fecha de construcción del enmallado y del corte del talud, y las fechas de avance del tajo
-cerca de Sarallenque en 2025.</li>
-<li>Si se confirma un giro de valor conocido, puede corregirse la dirección desde el {change}.
-Hasta entonces, conviene excluirla de las comparaciones.</li>
-</ul>
-</section>
-
-<section>
-<h2>6. Resumen por estación</h2>
-<p class="muted">Dirección = media vectorial de las horas con viento ≥ 0.5 m/s. «Esperado»: de día,
-desde el lado bajo de la pendiente; de noche, desde el lado alto. Velocidad media en m/s.</p>
+<h2>2. Resumen por estación</h2>
+<p class="muted">Dirección: media vectorial de las horas con viento ≥ 0.5 m/s. Velocidad: media de
+todas las horas de la franja, en m/s. «Terreno sube hacia»: orientación y pendiente del plano
+ajustado al DEM entre 90 y 360 m.</p>
 <div class="scroll">{summary}</div>
 </section>
 
 <section>
-<h2>7. Series semanales</h2>
-<p class="muted">Línea punteada: {change}. Banda gris: transición excluida de las rosas.</p>
+<h2>3. Series semanales</h2>
+<p class="muted">Sarallenque en negro; las estaciones de referencia en gris. Línea punteada: fecha
+de referencia {change}. Banda gris: tramo entre los dos periodos, que no entra en las rosas.</p>
 {weekly_dir}
 {weekly_speed}
 </section>
 
 <section>
-<h2>8. Rosas por estación</h2>
-<p class="muted">Frecuencia en % de todas las horas de la franja (las calmas, &lt; 0.5 m/s, van en
-el subtítulo). Escala radial común en las cuatro rosas de cada estación.</p>
+<h2>4. Rosas por estación</h2>
+<p class="muted">Frecuencia en % de todas las horas de la franja. Las calmas (&lt; 0.5 m/s) figuran
+en el subtítulo. Las cuatro rosas de una estación comparten la escala radial.</p>
 {roses}
 </section>
 
 <section>
-<h2>9. Relieve (SRTM 30 m)</h2>
-<p class="muted">Altitud de cada anillo menos la del sitio, en m. Positivo = más alto que la
-estación. «Entorno a 1.5 km»: media del anillo de 1.5 km; positivo = fondo de valle, negativo = alto.</p>
+<h2>5. Relieve (SRTM 30 m)</h2>
+<p class="muted">Altitud de cada anillo menos la del sitio, en m; positivo = más alto que la
+estación. «Entorno a 1.5 km»: media del anillo de 1.5 km. SRTM es de febrero de 2000, así que no
+recoge obras posteriores.</p>
 <div class="scroll">{relief}</div>
 </section>
 
 <section>
-<h2>10. Fotos de campo</h2>
+<h2>6. Fotos de campo</h2>
 <div class="photos">{photo_f1}{photo_f2}{photo_mn}</div>
 </section>
 
 <section>
-<h2>11. Datos y limitaciones</h2>
+<h2>7. Datos y métodos</h2>
 <ul>
-<li>Datos horarios de la base de meteorología con el QC de <code>met_viewer</code>. Las horas son las
-de la base.</li>
-<li>Sensores: Sarallenque y Mina_Norte, WindSonic/ClimaVUE a ~4 m sobre un shelter. Sarallenque_MQG,
-ClimaVUE a ~2 m. Altarani y Alto_Quellaveco, torre a 10 m. Las alturas distintas afectan a la
-velocidad, no a la dirección.</li>
-<li>Mina_Norte probablemente se reubicó (shelter móvil; GPS a 782 m del KMZ). Su periodo «después»
-puede mezclar dos ubicaciones.</li>
-<li>El DEM (SRTM, 2000) no ve obras posteriores, como el tajo, ni obstáculos menores de 30 m. Las
-pendientes de las estaciones junto al tajo (Sarallenque, Mina_Norte) son las del terreno original.</li>
+<li>Datos horarios de la base de meteorología, con el QC de <code>met_viewer</code>. Las horas son
+las de la base.</li>
+<li>Periodos: antes {antes}; después {despues}. El tramo intermedio sale en las series semanales,
+pero no en las rosas ni en el resumen.</li>
+<li>Franjas: día 10:00–17:59 y noche 22:00–06:59. Calma: velocidad &lt; 0.5 m/s.</li>
+<li>Sensores de viento según <code>stations.py</code>: Sarallenque, WindSonic a ~4 m sobre el
+Shelter 04. Mina_Norte, WindSonic y desde 2026-08-28 ClimaVUE, a ~4 m sobre el Shelter 05.
+Sarallenque_MQG-15-02, ClimaVUE a ~2 m. Altarani y Alto_Quellaveco, torre a 10 m.</li>
+<li>Relieve: SRTM 30 m consultado en OpenTopoData. Fondos del mapa: OpenTopoMap y Esri World
+Imagery (fecha de la imagen desconocida).</li>
 </ul>
 </section>
 """

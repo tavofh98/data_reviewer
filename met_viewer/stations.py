@@ -132,6 +132,16 @@ BARO_OFFSET: dict[str, float] = {
 }
 
 
+# Tramos en que la DIRECCIÓN del viento no es comparable con la de las vecinas: quedan fuera del
+# agrupamiento por régimen de viento. (inicio, fin) semiabierto; None = sin límite. Ver FINDINGS §8-§9.
+WIND_EXCLUDED: dict[str, list[tuple[str | None, str | None]]] = {
+    "Huachunta": [("2026-02-26", "2026-05-25")],   # veleta pegada en ~152°
+    "Sarallenque": [("2025-07-14", None)],          # traslado del shelter, girado ~180°, sector S–O tapado
+    "Mina_Norte": [(None, None)],                   # traslados del shelter sin fechar
+    "Chalsos": [(None, None)],                      # dirección invertida respecto a sus vecinas, sin confirmar
+}
+
+
 def sensor_at(station: str, group: str, when: str) -> Sensor | None:
     """Sensor vigente para `group` en la fecha `when` (ISO), o None si no consta."""
     vigentes = [s for s in STATIONS[station].sensors if s.group == group and s.since <= when]

@@ -71,41 +71,37 @@ GROUPS_COMBINED: un solo agrupamiento para todas las variables (distancia combin
 # Vizcachas              mediana   63.2 -> Huachunta r=0.93 (6 km); Titire r=0.89 (11 km); Minas_Sur r=0.56 (59 km)
 # Titire                 mediana   63.7 -> Vizcachas r=0.89 (11 km); Huachunta r=0.87 (16 km); Minas_Sur r=0.61 (65 km)
 #
-# == WS_ms_Avg
-# G1 (6), r medio 0.48: Alto_Tala, Calacaja, Calientes1, Cortadera, Tala-1, Tala_Legal
-# G2 (5), r medio 0.63: Alto_Quellaveco, Mina_Norte, Minas_Sur, Planta_Concentradora, Sarallenque_MQG-15-02
-# G3 (3), r medio 0.55: Altarani, Charaque, Sarallenque
-# G4 (3), r medio 0.56: Apacheta, Cerro_Salviani, Papujune
-# G5 (3), r medio 0.41: Dique_pie_botadero, Tala-1, Tala_Legal
-# G6 (3), r medio 0.59: Huachunta, Titire, Vizcachas
-# G7 (2), r medio 0.55: Camp_Quellaveco, Chancado_primario
-# G8 (2), r medio 0.42: Chalsos, DME3_Cortadera
+# == WS_ms_Avg — por régimen (coseno del ciclo diario del vector de viento), periodo 2025-09-24 → 2026-09-24
+# G1 (6), cos medio 0.92: Alto_Tala, Camp_Quellaveco, Charaque, Cortadera, Minas_Sur, Tala-1
+# G2 (5), cos medio 0.83: Altarani, Alto_Quellaveco, Calientes1, Planta_Concentradora, Tala_Legal
+# G3 (5), cos medio 0.92: Apacheta, Cerro_Salviani, Chancado_primario, Papujune, Sarallenque_MQG-15-02
+# G4 (3), cos medio 0.90: Huachunta, Titire, Vizcachas
+# G5 (2), cos medio 0.70: Calacaja, DME3_Cortadera
 #
-# Cerro_Salviani         mediana    1.3 -> Apacheta r=0.58 (6 km); Papujune r=0.56 (2 km); Minas_Sur r=0.44 (8 km)
-# Chancado_primario      mediana    1.4 -> Tala-1 r=0.61 (3 km); Camp_Quellaveco r=0.55 (1 km); Tala_Legal r=0.53 (5 km)
-# Camp_Quellaveco        mediana    1.5 -> Chancado_primario r=0.55 (1 km); Cerro_Salviani r=0.36 (6 km); Charaque r=0.35 (3 km)
-# Chalsos                mediana    1.6 -> DME3_Cortadera r=0.42 (8 km); Apacheta r=0.42 (6 km); Cerro_Salviani r=0.42 (10 km)
-# Mina_Norte             mediana    1.7 -> Sarallenque_MQG-15-02 r=0.72 (2 km); Minas_Sur r=0.65 (4 km); Planta_Concentradora r=0.62 (5 km)
-# Sarallenque            mediana    1.7 -> Charaque r=0.54 (4 km); Altarani r=0.52 (3 km); Alto_Tala r=0.47 (6 km)
-# Vizcachas              mediana    1.8 -> Huachunta r=0.68 (6 km); Titire r=0.53 (11 km); Minas_Sur r=0.25 (59 km)
-# Huachunta              mediana    1.8 -> Vizcachas r=0.68 (6 km); Titire r=0.55 (16 km); Minas_Sur r=0.27 (53 km)
-# Papujune               mediana    1.8 -> Cerro_Salviani r=0.56 (2 km); Planta_Concentradora r=0.55 (2 km); Apacheta r=0.54 (7 km)
-# Calacaja               mediana    1.8 -> Calientes1 r=0.31 (13 km); Tala_Legal r=0.31 (19 km); Charaque r=0.29 (23 km)
-# Titire                 mediana    1.9 -> Huachunta r=0.55 (16 km); Vizcachas r=0.53 (11 km); Minas_Sur r=0.17 (65 km)
-# DME3_Cortadera         mediana    1.9 -> Chalsos r=0.42 (8 km); Cerro_Salviani r=0.38 (10 km); Apacheta r=0.31 (11 km)
-# Alto_Tala              mediana    1.9 -> Tala-1 r=0.76 (1 km); Tala_Legal r=0.70 (1 km); Charaque r=0.53 (3 km)
-# Apacheta               mediana    2.3 -> Cerro_Salviani r=0.58 (6 km); Papujune r=0.54 (7 km); Alto_Quellaveco r=0.43 (7 km)
-# Planta_Concentradora   mediana    2.3 -> Mina_Norte r=0.62 (5 km); Papujune r=0.55 (2 km); Sarallenque_MQG-15-02 r=0.54 (7 km)
-# Minas_Sur              mediana    2.5 -> Alto_Quellaveco r=0.78 (1 km); Sarallenque_MQG-15-02 r=0.69 (4 km); Mina_Norte r=0.65 (4 km)
-# Alto_Quellaveco        mediana    2.5 -> Minas_Sur r=0.78 (1 km); Sarallenque_MQG-15-02 r=0.73 (5 km); Mina_Norte r=0.61 (4 km)
-# Charaque               mediana    2.6 -> Altarani r=0.59 (6 km); Tala_Legal r=0.54 (4 km); Tala-1 r=0.54 (2 km)
-# Tala_Legal             mediana    2.7 -> Tala-1 r=0.75 (2 km); Alto_Tala r=0.70 (1 km); Calientes1 r=0.60 (6 km)
-# Cortadera              mediana    2.8 -> Calientes1 r=0.52 (6 km); Tala_Legal r=0.52 (9 km); Tala-1 r=0.46 (9 km)
-# Sarallenque_MQG-15-02  mediana    2.9 -> Alto_Quellaveco r=0.73 (5 km); Mina_Norte r=0.72 (2 km); Minas_Sur r=0.69 (4 km)
-# Altarani               mediana    3.2 -> Charaque r=0.59 (6 km); Sarallenque r=0.52 (3 km); Tala-1 r=0.49 (8 km)
-# Calientes1             mediana    3.4 -> Tala_Legal r=0.60 (6 km); Alto_Tala r=0.53 (7 km); Cortadera r=0.52 (6 km)
-# Tala-1                 mediana    3.4 -> Alto_Tala r=0.76 (1 km); Tala_Legal r=0.75 (2 km); Chancado_primario r=0.61 (3 km)
-# Dique_pie_botadero     mediana    3.6 -> Tala_Legal r=0.26 (2 km); Tala-1 r=0.21 (1 km); Charaque r=0.20 (2 km)
+# Cerro_Salviani         mediana    1.3 -> Apacheta cos=0.92 (6 km); Papujune cos=0.89 (2 km); Chancado_primario cos=0.89 (6 km)
+# Chancado_primario      mediana    1.4 -> Apacheta cos=0.98 (8 km); Papujune cos=0.92 (4 km); Sarallenque_MQG-15-02 cos=0.90 (4 km)
+# Camp_Quellaveco        mediana    1.5 -> Cortadera cos=0.89 (10 km); Alto_Quellaveco cos=0.87 (3 km); Calientes1 cos=0.86 (10 km)
+# Vizcachas              mediana    1.8 -> Huachunta cos=0.94 (6 km); Titire cos=0.82 (11 km); Chancado_primario cos=0.73 (59 km)
+# Huachunta              mediana    1.8 -> Vizcachas cos=0.94 (6 km); Titire cos=0.94 (16 km); Cerro_Salviani cos=0.72 (59 km)
+# Papujune               mediana    1.8 -> Sarallenque_MQG-15-02 cos=0.99 (8 km); Charaque cos=0.94 (4 km); Cortadera cos=0.94 (7 km)
+# Calacaja               mediana    1.8 -> DME3_Cortadera cos=0.70 (8 km); Chancado_primario cos=0.65 (23 km); Sarallenque_MQG-15-02 cos=0.59 (27 km)
+# Titire                 mediana    1.9 -> Huachunta cos=0.94 (16 km); Vizcachas cos=0.82 (11 km); Camp_Quellaveco cos=0.62 (65 km)
+# DME3_Cortadera         mediana    1.9 -> Chancado_primario cos=0.82 (16 km); Apacheta cos=0.76 (11 km); Calacaja cos=0.70 (8 km)
+# Alto_Tala              mediana    1.9 -> Tala-1 cos=0.99 (1 km); Charaque cos=0.97 (3 km); Minas_Sur cos=0.96 (8 km)
+# Apacheta               mediana    2.3 -> Chancado_primario cos=0.98 (8 km); Papujune cos=0.93 (7 km); Cerro_Salviani cos=0.92 (6 km)
+# Planta_Concentradora   mediana    2.3 -> Tala_Legal cos=0.77 (4 km); Alto_Quellaveco cos=0.72 (5 km); Calientes1 cos=0.66 (7 km)
+# Minas_Sur              mediana    2.5 -> Alto_Tala cos=0.96 (8 km); Calientes1 cos=0.95 (12 km); Charaque cos=0.95 (6 km)
+# Alto_Quellaveco        mediana    2.5 -> Tala_Legal cos=0.98 (8 km); Calientes1 cos=0.95 (11 km); Minas_Sur cos=0.94 (1 km)
+# Charaque               mediana    2.6 -> Cortadera cos=0.99 (11 km); Alto_Tala cos=0.97 (3 km); Tala-1 cos=0.96 (2 km)
+# Tala_Legal             mediana    2.8 -> Alto_Quellaveco cos=0.98 (8 km); Calientes1 cos=0.96 (6 km); Minas_Sur cos=0.94 (8 km)
+# Cortadera              mediana    2.9 -> Charaque cos=0.99 (11 km); Alto_Tala cos=0.96 (9 km); Tala-1 cos=0.95 (9 km)
+# Sarallenque_MQG-15-02  mediana    2.9 -> Papujune cos=0.99 (8 km); Charaque cos=0.94 (4 km); Cortadera cos=0.94 (14 km)
+# Altarani               mediana    3.2 -> Tala_Legal cos=0.92 (9 km); Alto_Quellaveco cos=0.90 (2 km); Calientes1 cos=0.87 (14 km)
+# Calientes1             mediana    3.4 -> Tala_Legal cos=0.96 (6 km); Minas_Sur cos=0.95 (12 km); Alto_Quellaveco cos=0.95 (11 km)
+# Tala-1                 mediana    3.4 -> Alto_Tala cos=0.99 (1 km); Charaque cos=0.96 (2 km); Cortadera cos=0.95 (9 km)
+# Dique_pie_botadero     mediana    3.6 -> Camp_Quellaveco cos=0.75 (3 km); Cerro_Salviani cos=0.67 (4 km); Titire cos=0.59 (66 km)
+# Sin pareja (parecido medio < 0.6), una figura cada una: Dique_pie_botadero
+# Fuera del agrupamiento (stations.WIND_EXCLUDED), una figura cada una: Chalsos, Mina_Norte, Sarallenque
 #
 # == combinado (T, HR)
 # G1 (6), r medio 0.90: Altarani, Alto_Tala, Camp_Quellaveco, Charaque, Dique_pie_botadero, Tala_Legal
@@ -138,14 +134,15 @@ GROUPS: dict[str, list[list[str]]] = {
         ['Ilo'],
     ],
     'WS_ms_Avg': [
-        ['Alto_Tala', 'Calacaja', 'Calientes1', 'Cortadera', 'Tala-1', 'Tala_Legal'],
-        ['Alto_Quellaveco', 'Mina_Norte', 'Minas_Sur', 'Planta_Concentradora', 'Sarallenque_MQG-15-02'],
-        ['Altarani', 'Charaque', 'Sarallenque'],
-        ['Apacheta', 'Cerro_Salviani', 'Papujune'],
-        ['Dique_pie_botadero', 'Tala-1', 'Tala_Legal'],
+        ['Alto_Tala', 'Camp_Quellaveco', 'Charaque', 'Cortadera', 'Minas_Sur', 'Tala-1'],
+        ['Altarani', 'Alto_Quellaveco', 'Calientes1', 'Planta_Concentradora', 'Tala_Legal'],
+        ['Apacheta', 'Cerro_Salviani', 'Chancado_primario', 'Papujune', 'Sarallenque_MQG-15-02'],
         ['Huachunta', 'Titire', 'Vizcachas'],
-        ['Camp_Quellaveco', 'Chancado_primario'],
-        ['Chalsos', 'DME3_Cortadera'],
+        ['Calacaja', 'DME3_Cortadera'],
+        ['Dique_pie_botadero'],
+        ['Chalsos'],
+        ['Mina_Norte'],
+        ['Sarallenque'],
         ['Ilo'],
     ],
 }

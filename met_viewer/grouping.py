@@ -1,4 +1,4 @@
-"""Propone grupos de estaciones meteorológicas POR VARIABLE (T, HR, velocidad del viento).
+"""Propone grupos de estaciones meteorológicas POR VARIABLE (T, HR y viento).
 
 Uso:
     uv run python met_viewer/grouping.py [--dias 365] [--max 6]
@@ -9,6 +9,13 @@ estación. Así se quitan el ciclo diario y la estación de cada una, y lo que s
 el tiempo que comparten. (Restar la mediana de toda la red se probó y agrupa peor: pares a
 16.6 km y 383 m de desnivel de media contra 5.0 km y 165 m.) Solo cuentan los pares con al
 menos MIN_DIAS_COMUNES días en común.
+
+El viento se agrupa por RÉGIMEN, no por anomalías: distancia = 1 − coseno entre los ciclos diarios
+medios del vector de procedencia (u y v por hora). El coseno no depende de la escala, así que la
+altura del sensor (2 m / 10 m) no manda; lo que se compara es de dónde viene el viento a cada hora.
+La correlación de anomalías de velocidad era débil (r típica 0.15–0.35 a < 25 km) y quita el ciclo
+diario, que es donde se ven los fallos de orientación (ver WIND_REVIEW.md). Los tramos de
+stations.WIND_EXCLUDED no cuentan; una estación sin 60 días útiles va aparte, en su propia figura.
 
 Agrupar por variable y no con una distancia combinada: una estación puede parecerse a unas
 en temperatura y a otras en humedad o viento, y así ninguna se queda sin comparación.
@@ -37,7 +44,7 @@ from scipy.spatial.distance import squareform
 
 import data
 import qc
-from stations import STATIONS
+from stations import STATIONS, WIND_EXCLUDED
 
 VARS_GRUPO = (data.TEMP, data.RH, data.WS)
 # El viento queda fuera del agrupamiento único: juntaba estaciones que en T no se parecen
@@ -45,6 +52,10 @@ VARS_GRUPO = (data.TEMP, data.RH, data.WS)
 # HR la correlación interna de los grupos sube de 0.66–0.86 a 0.84–0.93 (medido 2025-2026).
 VARS_COMBINADO = (data.TEMP, data.RH)
 MIN_DIAS_COMUNES = 60
+# Viento: parecido medio (coseno) mínimo con el resto del grupo para quedarse en él. Separa a
+# Dique_pie_botadero (0.55, arrastrado al altiplano a 66 km) y conserva al miembro real más
+# débil, Planta_Concentradora (0.68; medido 2025-09 → 2026-09).
+MIN_PARECIDO_VIENTO = 0.60
 MAX_POR_GRUPO = 6
 APARTE = ("Ilo",)
 SALIDA = Path(__file__).parent / "groups_draft.py"
@@ -68,6 +79,64 @@ def distancia(limpio: dict[str, pd.DataFrame], var: str, rellenar: bool = True) 
     d = (d.fillna(1.0) if rellenar else d).to_numpy(copy=True)
     np.fill_diagonal(d, 0.0)
     return pd.DataFrame(d, index=w.columns, columns=w.columns)
+
+
+def viento_util(est: str, df: pd.DataFrame) -> pd.DataFrame:
+    """Quita a la estación sus tramos de stations.WIND_EXCLUDED."""
+    fuera = pd.Series(False, index=df.index)
+    for a, b in WIND_EXCLUDED.get(est, []):
+        tramo = pd.Series(True, index=df.index)
+        if a:
+            tramo &= df.index >= pd.Timestamp(a)
+        if b:
+            tramo &= df.index < pd.Timestamp(b)
+        fuera |= tramo
+    return df[~fuera]
+
+
+def ciclo_viento(df: pd.DataFrame) -> np.ndarray | None:
+    """Ciclo diario medio del vector de procedencia: 24 valores de u y luego 24 de v.
+    Las calmas pesan cero. None si hay menos de MIN_DIAS_COMUNES días o falta alguna hora."""
+    df = df[[data.WS, data.WD]].dropna()
+    if len(df) < 24 * MIN_DIAS_COMUNES:
+        return None
+    rad = np.deg2rad(df[data.WD])
+    ws = df[data.WS].where(df[data.WS] >= qc.CALM_WS, 0.0)
+    uv = pd.DataFrame({"u": ws * np.sin(rad), "v": ws * np.cos(rad)}).groupby(df.index.hour).mean()
+    uv = uv.reindex(range(24))
+    return None if uv.isna().any().any() else np.concatenate([uv.u.to_numpy(), uv.v.to_numpy()])
+
+
+def distancia_regimen(limpio: dict[str, pd.DataFrame]) -> tuple[pd.DataFrame, list[str]]:
+    """Matriz 1 − coseno entre ciclos diarios del vector de viento, y estaciones que quedan fuera
+    (sin datos útiles tras WIND_EXCLUDED)."""
+    ciclos, fuera = {}, []
+    for e, df in sorted(limpio.items()):
+        if e in APARTE or data.WS not in df or data.WD not in df:
+            continue
+        c = ciclo_viento(viento_util(e, df))
+        if c is None:
+            fuera.append(e)
+        else:
+            ciclos[e] = c
+    m = pd.DataFrame(ciclos)
+    m = m / np.linalg.norm(m, axis=0)
+    d = (1 - m.T @ m).clip(lower=0).to_numpy(copy=True)
+    np.fill_diagonal(d, 0.0)
+    return pd.DataFrame(d, index=m.columns, columns=m.columns), fuera
+
+
+def separar_sueltas(dist: pd.DataFrame, grupos: list[list[str]], minimo: float) -> tuple[list[list[str]], list[str]]:
+    """Saca de su grupo a la estación cuyo parecido medio (1 − distancia) con el resto es < minimo."""
+    quedan, sueltas = [], []
+    for g in grupos:
+        par = 1 - dist.loc[g, g]
+        medio = (par.sum() - 1) / max(len(g) - 1, 1)
+        sueltas += [e for e in g if len(g) > 1 and medio[e] < minimo]
+        resto = [e for e in g if e not in sueltas]
+        if resto:
+            quedan.append(resto)
+    return quedan, sueltas
 
 
 def distancia_combinada(dists: dict[str, pd.DataFrame]) -> pd.DataFrame:
@@ -112,18 +181,20 @@ def _km(a: str, b: str) -> float:
     return float(np.hypot(sa.easting - sb.easting, sa.northing - sb.northing) / 1000)
 
 
-def informe(var: str, dist: pd.DataFrame, grupos: list[list[str]], mediana: pd.Series) -> list[str]:
-    """Por grupo: r medio interno. Por estación: su mediana y sus 3 estaciones más correlacionadas."""
+def informe(var: str, dist: pd.DataFrame, grupos: list[list[str]], mediana: pd.Series,
+            medida: str = "r") -> list[str]:
+    """Por grupo: parecido medio interno (1 − distancia). Por estación: su mediana y sus 3
+    estaciones más parecidas. `medida` nombra el parecido: r (correlación) o cos (régimen)."""
     lineas = [f"== {var}"]
     for i, g in enumerate(grupos, 1):
         interna = dist.loc[g, g].to_numpy()[np.triu_indices(len(g), 1)]
-        lineas.append(f"G{i} ({len(g)}), r medio {1 - interna.mean():.2f}: {', '.join(g)}")
+        lineas.append(f"G{i} ({len(g)}), {medida} medio {1 - interna.mean():.2f}: {', '.join(g)}")
     lineas.append("")
     for e in mediana.sort_values().index:
         if e not in dist:
             continue
         cerca = dist[e].drop(e).nsmallest(3)
-        txt = "; ".join(f"{o} r={1 - d:.2f} ({_km(e, o):.0f} km)" for o, d in cerca.items())
+        txt = "; ".join(f"{o} {medida}={1 - d:.2f} ({_km(e, o):.0f} km)" for o, d in cerca.items())
         lineas.append(f"{e:22s} mediana {mediana[e]:6.1f} -> {txt}")
     return lineas
 
@@ -161,11 +232,23 @@ def main() -> None:
 
     por_var, dists, lineas = {}, {}, []
     for var in VARS_GRUPO:
-        dists[var] = distancia(limpio, var)
+        fuera = []
+        if var == data.WS:
+            dists[var], fuera = distancia_regimen(limpio)
+        else:
+            dists[var] = distancia(limpio, var)
         grupos = cortar(dists[var], args.max)
+        sueltas = []
+        if var == data.WS:
+            grupos, sueltas = separar_sueltas(dists[var], grupos, MIN_PARECIDO_VIENTO)
         mediana = pd.Series({e: df[var].median() for e, df in limpio.items() if var in df})
-        por_var[var] = grupos
-        lineas += informe(var, dists[var], grupos, mediana) + [""]
+        lineas += informe(var, dists[var], grupos, mediana, "cos" if var == data.WS else "r")
+        if sueltas:
+            lineas.append(f"Sin pareja (parecido medio < {MIN_PARECIDO_VIENTO}), una figura cada una: {', '.join(sueltas)}")
+        if fuera:
+            lineas.append(f"Fuera del agrupamiento (stations.WIND_EXCLUDED), una figura cada una: {', '.join(fuera)}")
+        por_var[var] = grupos + [[e] for e in sueltas + fuera]
+        lineas.append("")
 
     # agrupamiento único (vista por grupo): solo T y HR, con las sueltas unidas a su pareja
     comb = distancia_combinada({v: distancia(limpio, v, rellenar=False) for v in VARS_COMBINADO})
