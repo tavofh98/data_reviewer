@@ -33,8 +33,9 @@ REPORTED: dict[str, list[str]] = _mod.VARIABLES_REPORTE["meteorologia"]
 @dataclass(frozen=True)
 class Sensor:
     group: str   # "viento", "lluvia", "termohigro", "presion"
-    kind: str    # "climavue", "torre", "young", "hygrovue", "barometro"
+    kind: str    # "climavue", "windsonic", "torre", "young", "hygrovue", "barometro"
     since: str   # fecha ISO desde la que el programa toma la variable de este sensor
+    height_m: float | None = None   # altura sobre el suelo, solo si difiere de la típica del tipo
 
 
 @dataclass(frozen=True)
@@ -92,21 +93,27 @@ STATIONS: dict[str, Station] = {
     "Huachunta":             Station(355567, 8153330, 4410, 4410, _torre()),
     "Ilo":                   Station(267774, 8034132, 46, None,
                                      _cv(Sensor("lluvia", "young", "2025-07-01"))),  # inferido; ClimaVUE sin confirmar
-    # T, HR y presión desde el ClimaVUE (2026-08-28; en la base desde 2026-08-30). z_baro contra 22
-    # vecinas con 22 días, no 365: recalcular con calibrate_baro.py al pasar de 30 días. El GPS de
-    # campo (326497, 8110200; 4004-4015 m elipsoidal → ~3970) cae a 782 m: sin confirmar si hubo
-    # reubicación, la coordenada no se cambia. Ver FINDINGS.md §2.
+    # Sin torre: viento de un WindSonic y, desde 2026-08-28, todo del ClimaVUE (en la base desde
+    # 2026-08-30). Ambos en un mástil sujeto a un shelter sobre remolque, a 3.9-4.1 m del suelo
+    # (fotos de campo). z_baro contra 22 vecinas con 22 días, no 365: recalcular con
+    # calibrate_baro.py al pasar de 30 días. El GPS de campo (326497, 8110200; 4004-4015 m
+    # elipsoidal → ~3970) cae a 782 m: sin confirmar si hubo reubicación, la coordenada no se
+    # cambia. Ver FINDINGS.md §2.
     "Mina_Norte":            Station(327257, 8110014, 3972, 3983,
-                                     (Sensor("viento", "torre", _INICIO), Sensor("lluvia", "young", _INICIO),
-                                      Sensor("viento", "climavue", "2026-08-28"),
-                                      Sensor("termohigro", "climavue", "2026-08-28"),
-                                      Sensor("presion", "climavue", "2026-08-28"))),
+                                     (Sensor("viento", "windsonic", _INICIO, 4.0), Sensor("lluvia", "young", _INICIO),
+                                      Sensor("viento", "climavue", "2026-08-28", 4.0),
+                                      Sensor("termohigro", "climavue", "2026-08-28", 4.0),
+                                      Sensor("presion", "climavue", "2026-08-28", 4.0))),
     "Minas_Sur":             Station(329299, 8106779, 4119, 4111, _torre()),
     "PMC-4_met":             Station(316969, 8096187, 2884, None, (Sensor("lluvia", "young", _INICIO),)),
     "Papujune":              Station(322640, 8106523, 3777, 3775, _torre()),
     "Planta_Concentradora":  Station(324023, 8105777, 3868, 3874,
                                      _cv(Sensor("lluvia", "young", "2026-02-01"))),
-    "Sarallenque":           Station(328371, 8108822, 3718, None, _torre()),
+    # Sin torre: WindSonic en un mástil del Shelter 04 (remolque), a ~4 m, con el shelter inclinado,
+    # enmallado contiguo al este y talud a ~10 m al este (fotos 2026-05 y 2026-08; GPS a 11 m de
+    # esta coordenada). Desde 2025-07-14 cambian a la vez dirección y velocidad (causa sin confirmar).
+    "Sarallenque":           Station(328371, 8108822, 3718, None,
+                                     (Sensor("viento", "windsonic", _INICIO, 4.0), Sensor("lluvia", "young", _INICIO))),
     "Sarallenque_MQG-15-02": Station(328939, 8110942, 4251, 4264, _cv()),
     "Tala-1":                Station(322943, 8108610, 3568, 3572, _torre()),
     "Tala_Legal":            Station(321308, 8108678, 3306, 3316, _torre()),
@@ -125,7 +132,7 @@ BARO_OFFSET: dict[str, float] = {
 }
 
 
-def sensor_at(station: str, group: str, when: str) -> str | None:
-    """Tipo de sensor vigente para `group` en la fecha `when` (ISO), o None si no consta."""
+def sensor_at(station: str, group: str, when: str) -> Sensor | None:
+    """Sensor vigente para `group` en la fecha `when` (ISO), o None si no consta."""
     vigentes = [s for s in STATIONS[station].sensors if s.group == group and s.since <= when]
-    return max(vigentes, key=lambda s: s.since).kind if vigentes else None
+    return max(vigentes, key=lambda s: s.since) if vigentes else None

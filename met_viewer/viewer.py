@@ -33,7 +33,8 @@ TITULOS = {
     data.WS: "Velocidad del viento (m/s)",
     "BP_DEV": "Desvío de presión respecto a las vecinas (mbar)",
 }
-ETIQUETA_SENSOR = {"climavue": "ClimaVUE ~2 m", "torre": "torre"}
+NOMBRE_SENSOR = {"climavue": "ClimaVUE", "windsonic": "WindSonic", "torre": "torre"}
+ALTURA_TIPICA = {"climavue": 2.0, "windsonic": 2.0, "torre": 10.0}   # m, si el sensor no declara la suya
 
 
 def _layout(fig: go.Figure, titulo: str) -> None:
@@ -53,8 +54,10 @@ def _layout(fig: go.Figure, titulo: str) -> None:
 def _nombre(est: str, var: str, fin: pd.Timestamp) -> str:
     if var != data.WS:
         return est
-    tipo = sensor_at(est, "viento", f"{fin:%Y-%m-%d}")
-    return f"{est} · {ETIQUETA_SENSOR.get(tipo, 's/d')}"
+    s = sensor_at(est, "viento", f"{fin:%Y-%m-%d}")
+    if s is None or s.kind not in NOMBRE_SENSOR:
+        return f"{est} · s/d"
+    return f"{est} · {NOMBRE_SENSOR[s.kind]} ~{s.height_m or ALTURA_TIPICA[s.kind]:g} m"
 
 
 def _lista(s: pd.Series) -> list[float | None]:
