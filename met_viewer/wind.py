@@ -26,6 +26,29 @@ def ciclo_velocidad(df: pd.DataFrame) -> pd.Series:
     return g.mean().where(g.size() >= MIN_HORAS_CICLO).reindex(range(24))
 
 
+def conteos_diarios(df: pd.DataFrame, franja: str, dias: pd.DatetimeIndex) -> np.ndarray:
+    """Horas por día de la franja: matriz días × (SECTORES·clases + 2). Columna s·nclases + k =
+    horas del sector s en la clase k; las dos últimas, horas en calma y horas con dato.
+    La noche cuenta en el día en que empieza (las 0–5 h, en el día anterior)."""
+    nc = len(ETIQUETAS_VEL)
+    out = np.zeros((len(dias), SECTORES * nc + 2), dtype=int)
+    d = df[df.index.hour.isin(FRANJAS[franja])][[data.WS, data.WD]].dropna()
+    if d.empty:
+        return out
+    dia = (d.index - pd.Timedelta(hours=6)).normalize() if franja == "noche" else d.index.normalize()
+    fila = pd.Series(dias.get_indexer(dia), index=d.index)
+    d, fila = d[fila.to_numpy() >= 0], fila[fila >= 0]
+    viento = (d[data.WS] >= qc.CALM_WS).to_numpy()
+    ancho = 360 / SECTORES
+    sector = ((d[data.WD] + ancho / 2) % 360 // ancho).astype(int).to_numpy()
+    clase = pd.cut(d[data.WS], CLASES_VEL, labels=False, right=False).fillna(-1).astype(int).to_numpy()
+    f = fila.to_numpy()
+    np.add.at(out, (f[viento], sector[viento] * nc + clase[viento]), 1)
+    np.add.at(out, (f[~viento], SECTORES * nc), 1)
+    np.add.at(out, (f, SECTORES * nc + 1), 1)
+    return out
+
+
 def rosa(df: pd.DataFrame, franja: str) -> tuple[pd.DataFrame, float, int]:
     """Frecuencia de procedencia en la franja: tabla sector × clase de velocidad en % de todas
     las horas con dato (calmas incluidas en el total), % de calma y horas con dato."""

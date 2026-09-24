@@ -465,3 +465,46 @@ hidrológico, sin esas horas: Dique_pie_botadero suma 13 mm en 2024-25 frente a 
 vecinas y 222 en 2025-26; Calientes1 pasa de 194 a 88 mm mientras sus vecinas se mantienen.
 Pendiente: cruzar con el historial de intervenciones (volcados de prueba = falsos positivos).
 
+### Intervenciones frente a los datos de lluvia (2026-09-24)
+
+Fuentes del usuario, en la raíz del workspace: `intervenciones_meteorologia.csv` (154 visitas,
+2026-01-31 → 2026-09-23) y `observaciones_precipitacion.csv` (4 casos). Correspondencia de nombres:
+DPB-1 = Dique_pie_botadero, PCHAP_1 = Chancado_primario, Mina_Sur1 = Minas_Sur, PMC-4 = PMC-4_met y
+EHA-TIT-1 = Titire (su resolución pasa de 0.017 a 0.1 mm el 2026-02-11, el día en que el parte
+instala el Young). PMC-3 no está en la base.
+
+**Pruebas con agua.** 250 ml = 125 volcados = 12.5 mm. De 123 visitas al pluviómetro, 17 dejan
+huella en `Rain_mm_Tot` (lluvia en la estación con sus vecinas del grupo < 0.5 mm): de 0.3 a 8.6 mm,
+casi siempre en una sola hora entre las 12 y las 13 h. 42 de las 51 pruebas marcadas «si» no dejan
+nada: se hacen en modo mantenimiento (tabla de mantenimiento, `Rain_raw` en Camp_Quellaveco desde
+2026-07-02). Reincidentes: Planta_Concentradora (6 visitas con huella, también en simples
+limpiezas), Mina_Norte, Huachunta y Sarallenque. Huellas con el pluviómetro «no_consta» en el
+parte: Mina_Norte 2026-02-03 (2.2 mm) y Camp_Quellaveco 2026-02-28 (2.1 mm). Huachunta 2026-06-18:
+12.9 mm en la hora de las 12, justo una prueba de 250 ml, un día antes de la visita del parte
+(2026-06-19): fecha del parte probablemente desplazada, como en Cerro_Salviani (2026-09-13/14).
+
+**Lluvia aislada sin visita a ±1 día** (≥ 1 mm con las vecinas < 0.3): 12 días. En la época húmeda
+pueden ser celdas convectivas reales (Titire 4, Vizcachas 2, entre ene y abr). Más sospechosos:
+Sarallenque_MQG-15-02 el 2026-04-06 (4.62 mm en una hora) y el 2026-05-30 (2.82 mm a las 00 h, en
+época seca).
+
+**Observaciones del usuario, contrastadas:**
+- Ilo: 3 062 y 41.3 mm el 10/08 y 3 873–7 999 mm de 13 a 17 h el 11/08, como dice la nota. Además,
+  del 12 al 18/08 registra 31 mm en 62 horas de goteo casi continuo, frente a 16.9 mm en los 11
+  meses anteriores; el 17/08 llueve de 06 a 10 h, antes que en la sierra (15 h). Hipótesis:
+  drenaje del embudo obstruido hasta la limpieza del 19/08. Candidato a ampliar el descarte al
+  periodo 2026-08-10 → 2026-08-19.
+- Mina_Norte: 279.5 mm a las 16 h del 23/08 (la nota dice > 400: cantidad aproximada) y goteo
+  hasta el 25/08, con 12.3 y 12.4 mm a las 07 y 08 h. Dentro del descarte 23/08 → 27/08.
+- Evento del 17–18/08: real en toda la red (4–14 mm en la mayoría). Se apartan Dique_pie_botadero
+  (29.3 mm: 1.8 veces Tala-1, a 0.5 km, en las mismas horas, más 7.9 mm de 22 a 23 h que Tala-1
+  no tiene; agosto: 29.9 mm frente a 7–15 de sus vecinas) y Calacaja (38.3 mm, con el máximo a
+  las 13–14 h, antes que el resto).
+- Dique_pie_botadero, prueba del 16/08: la hora de las 12 está en NaN en `Rain_mm_Tot`; la prueba
+  quedó fuera de la serie, coherente con la nota.
+
+**Calacaja: resolución de 0.034 mm.** El 99.3 % de sus valores son múltiplos de 0.034 y ninguno es
+un múltiplo impar de 0.017 (la resolución del ClimaVUE). Hipótesis: multiplicador del programa
+duplicado, que doblaría su lluvia (99 y 151 mm por año hidrológico; la mitad, 50 y 75). Revisar el
+programa del datalogger.
+

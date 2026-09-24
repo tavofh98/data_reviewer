@@ -125,7 +125,7 @@ NOTA_MAPAS = (
     "Rosas de procedencia: cada pétalo es el % de las horas de la franja en que el viento vino de "
     "ese sector de 22.5°, apilado por velocidad. Las calmas (< 0.5 m/s) no tienen pétalo; su % "
     "está en el cursor sobre cada estación. Día y noche comparten escala dentro de cada zona, no "
-    "entre zonas.")
+    "entre zonas, y la escala se recalcula con el periodo. La noche cuenta en el día en que empieza.")
 NOTA_GRUPOS = (
     "Grupos de viento (groups*.py): por régimen de dirección y forma del ciclo diario de velocidad; "
     "ver grouping.py. La leyenda indica el sensor y su altura. Banda gris del ciclo diario: noche "
@@ -151,8 +151,20 @@ def fig_ciclo_velocidad(grupo: list[str], limpio, fin) -> go.Figure | None:
     return fig
 
 
-def _seccion_viento(grupos: list[list[str]], limpio, flags, dev_horario, h: "_Html", fin) -> str:
-    mapas = [h.div(f) for z in rose_maps.ZONAS if (f := rose_maps.mapa_zona(z, limpio, fin)) is not None]
+CONTROL_PERIODO = """<div class="periodo">
+<label>Periodo de las rosas: desde <input type="date" id="r_ini"></label>
+<label>durante <select id="r_dias">{opciones}</select></label>
+<button type="button" id="r_todo">Toda la ventana</button>
+<span id="r_txt"></span></div>"""
+MAX_DIAS_PERIODO = 5
+
+
+def _seccion_viento(grupos: list[list[str]], limpio, flags, dev_horario, h: "_Html", ini, fin) -> str:
+    mapas = [h.div(f) for z in rose_maps.ZONAS if (f := rose_maps.mapa_zona(z, limpio, ini, fin)) is not None]
+    if mapas:
+        opciones = "".join(f'<option value="{n}"{" selected" if n == MAX_DIAS_PERIODO else ""}>'
+                           f'{n} día{"s" if n > 1 else ""}</option>' for n in range(1, MAX_DIAS_PERIODO + 1))
+        mapas.insert(0, CONTROL_PERIODO.format(opciones=opciones))
     bloques = []
     for n, grupo in enumerate(grupos, 1):
         figs = [f for f in (_figura_de(grupo, data.WS, limpio, flags, dev_horario, fin, TITULOS[data.WS]),
@@ -202,7 +214,7 @@ def construir_por_variable(grupos: dict[str, list[list[str]]], limpio, flags, de
     h, secciones = _Html(), []
     for var in VARIABLES_VISTA:
         if var == data.WS:
-            if sec := _seccion_viento(grupos[var], limpio, flags, dev_horario, h, fin):
+            if sec := _seccion_viento(grupos[var], limpio, flags, dev_horario, h, ini, fin):
                 secciones.append(sec)
             continue
         divs = []
@@ -290,6 +302,104 @@ JS_CENTRAR = r"""
 """
 
 
+# Selector de periodo de las rosas: suma en el navegador los conteos diarios que cada mapa lleva en
+# layout.meta.rosas (rose_maps._datos_periodo) y redibuja rosas, cursor y rótulo de escala, con la
+# misma geometría y el mismo criterio de escala (percentil de los pétalos máximos) que Python.
+JS_ROSAS = r"""
+(function () {
+  const mapas = Array.from(document.querySelectorAll(".js-plotly-plot"))
+    .filter(gd => gd.layout && gd.layout.meta && gd.layout.meta.rosas);
+  if (!mapas.length) return;
+  const dias = mapas[0].layout.meta.rosas.dias;
+  const ini = document.getElementById("r_ini"), nd = document.getElementById("r_dias");
+  const todo = document.getElementById("r_todo"), txt = document.getElementById("r_txt");
+  const NS = 16, ANCHO = 360 / NS;
+  ini.min = dias[0]; ini.max = dias[dias.length - 1];
+  ini.value = dias[Math.max(0, dias.length - Number(nd.value))];
+
+  function percentil(v, p) {                     // interpolación lineal, como numpy
+    if (!v.length) return NaN;
+    const s = v.slice().sort((a, b) => a - b), h = (s.length - 1) * p / 100, lo = Math.floor(h);
+    return s[lo] + (s[Math.min(lo + 1, s.length - 1)] - s[lo]) * (h - lo);
+  }
+  const pct = (a, n) => n ? Math.round(100 * a / n) + " %" : "–";
+
+  function dibujar(gd, a, b) {                   // días [a, b)
+    const m = gd.layout.meta.rosas, NC = m.nclases;
+    const suma = {}, maximos = [];
+    m.est.forEach((e, i) => {
+      let mx = 0, hay = false;
+      for (const fr of m.franjas) {
+        const acc = new Array(NS * NC + 2).fill(0);
+        for (let d = a; d < b; d++) m.c[fr][i][d].forEach((v, j) => { acc[j] += v; });
+        suma[fr + i] = acc;
+        const n = acc[NS * NC + 1];
+        if (!n) continue;
+        hay = true;
+        for (let s = 0; s < NS; s++) {
+          let f = 0;
+          for (let k = 0; k < NC; k++) f += acc[s * NC + k];
+          mx = Math.max(mx, 100 * f / n);
+        }
+      }
+      if (hay) maximos.push(mx);
+    });
+    const ref = percentil(maximos, m.ref_percentil);
+    const escala = ref > 0 ? m.petalo_m / Math.sqrt(ref) : 0;
+
+    const xs = [], ys = [], idx = [];
+    for (const fr of m.franjas) for (let k = NC - 1; k >= 0; k--) {
+      const x = [], y = [];
+      m.est.forEach((e, i) => {
+        const acc = suma[fr + i], n = acc[NS * NC + 1];
+        if (!n) return;
+        for (let s = 0; s < NS; s++) {
+          let f = 0;
+          for (let q = 0; q <= k; q++) f += acc[s * NC + q];
+          if (f <= 0) continue;
+          const r = escala * Math.sqrt(100 * f / n) * e.k;
+          x.push(e.x); y.push(e.y);
+          for (let j = 0; j < 6; j++) {
+            const ang = (s * ANCHO - ANCHO / 2 + j * ANCHO / 5) * Math.PI / 180;
+            x.push(e.x + r * Math.sin(ang)); y.push(e.y + r * Math.cos(ang));
+          }
+          x.push(e.x, null); y.push(e.y, null);
+        }
+      });
+      xs.push(x); ys.push(y); idx.push(m.trazas[fr][k]);
+    }
+    const hover = m.est.map((e, i) => {
+      const d = suma[m.franjas[0] + i], n = suma[m.franjas[1] + i], cd = d[NS * NC + 1], cn = n[NS * NC + 1];
+      return `<b>${e.n}</b><br>${e.sensor}<br>` + (cd + cn
+        ? `calma: día ${pct(d[NS * NC], cd)} (${cd} h) · noche ${pct(n[NS * NC], cn)} (${cn} h)`
+        : "sin datos de viento en el periodo");
+    });
+    Plotly.restyle(gd, {x: xs, y: ys}, idx);
+    Plotly.restyle(gd, {hovertext: [hover]}, [m.traza_puntos]);
+    const rotulo = Number.isFinite(ref)
+      ? `<b>Zona ${m.zona}</b> · pétalo de ${m.petalo_m} m = ${Math.round(ref)} % de las horas de la franja`
+      : `<b>Zona ${m.zona}</b> · sin datos en el periodo`;
+    Plotly.relayout(gd, {[`annotations[${m.anot_zona}].text`]: rotulo});
+  }
+
+  function aplicar(a, b) {
+    mapas.forEach(gd => dibujar(gd, a, b));
+    txt.textContent = b - a === dias.length ? `toda la ventana (${dias.length} días)`
+      : `${dias[a]} → ${dias[b - 1]} (${b - a} día${b - a > 1 ? "s" : ""})`;
+  }
+  function desdeControles() {
+    let a = dias.indexOf(ini.value);
+    if (a < 0) a = Math.max(0, dias.length - Number(nd.value));
+    aplicar(a, Math.min(dias.length, a + Number(nd.value)));
+  }
+  ini.addEventListener("change", desdeControles);
+  nd.addEventListener("change", desdeControles);
+  todo.addEventListener("click", () => aplicar(0, dias.length));
+  txt.textContent = `toda la ventana (${dias.length} días)`;
+})();
+"""
+
+
 def _pagina(titulo: str, indice: list[tuple[str, str]], secciones: list[str],
             ini: pd.Timestamp, fin: pd.Timestamp, borrador: bool) -> str:
     nav = "".join(f'<a href="#{i}">{html.escape(t)}</a>' for i, t in indice)
@@ -309,6 +419,10 @@ def _pagina(titulo: str, indice: list[tuple[str, str]], secciones: list[str],
  .aviso{{color:{CRITICO};font-weight:600}}
  #modo{{font:inherit;font-size:13px;padding:4px 10px;margin:4px 0 6px;border:1px solid {MUTED};border-radius:6px;
         background:{SUPERFICIE};color:{INK};cursor:pointer}}
+ .periodo{{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-size:13px;margin:8px 0}}
+ .periodo input,.periodo select,.periodo button{{font:inherit;padding:3px 6px;border:1px solid {MUTED};
+        border-radius:6px;background:{SUPERFICIE};color:{INK}}}
+ .periodo button{{cursor:pointer}} #r_txt{{color:{INK_2}}}
  #modo[aria-pressed="true"]{{background:#2a78d6;border-color:#2a78d6;color:#fff}}
 </style></head><body>
 <header><h1>{titulo} · {ini:%Y-%m-%d %H:%M} → {fin:%Y-%m-%d %H:%M}</h1>{aviso}
@@ -316,6 +430,7 @@ def _pagina(titulo: str, indice: list[tuple[str, str]], secciones: list[str],
 <nav>{nav}</nav></header>
 {"".join(secciones)}
 <script>{JS_CENTRAR}</script>
+<script>{JS_ROSAS}</script>
 </body></html>"""
 
 

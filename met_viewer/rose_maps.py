@@ -4,6 +4,11 @@ Cada zona es un gráfico cartesiano en Web Mercator con las teselas incrustadas 
 fondo, como en sarallenque_wind/build_report.py: no depende de WebGL ni de cargar teselas al
 abrir el HTML. Las teselas se guardan en tiles_cache/ para no volver a descargarlas.
 
+Cada mapa lleva en layout.meta.rosas los conteos por estación, día y franja (wind.conteos_diarios),
+la posición de cada estación en Web Mercator y los índices de trazas y anotaciones: con eso el
+JavaScript de la página (viewer.JS_ROSAS) redibuja las rosas para cualquier periodo de días sin
+volver a Python. Las rosas que salen de Python son las de toda la ventana.
+
 Rosa = frecuencia de procedencia (% de las horas con dato de la franja) por sector de 22.5°,
 apilada por clase de velocidad; el radio es proporcional a la raíz de la frecuencia, así que el
 área de cada pétalo es proporcional a su frecuencia. Dentro de una zona, día y noche comparten
@@ -107,13 +112,35 @@ def _cunas(x0: float, y0: float, frec: np.ndarray, escala: float) -> tuple[list,
     return xs, ys
 
 
+def _datos_periodo(zona, cfg, todas, con_dato, limpio, sensores, ini, fin, franja_de_traza, anot_zona) -> dict:
+    """Todo lo que necesita JS_ROSAS para redibujar las rosas de un periodo de días."""
+    dias = pd.date_range(ini.normalize(), (fin - pd.Timedelta(seconds=1)).normalize(), freq="D")
+    vacio = np.zeros((len(dias), wind.SECTORES * len(wind.ETIQUETAS_VEL) + 2), dtype=int)
+    est = []
+    for e, sensor in zip(todas, sensores):
+        x, y = STATIONS[e].easting, STATIONS[e].northing
+        mx, my = A_MERC.transform(x, y)
+        k = (A_MERC.transform(x, y + 1000)[1] - my) / 1000        # unidades Mercator por metro
+        est.append({"n": e, "x": mx, "y": my, "k": k, "sensor": sensor})
+    conteos = {fr: [(wind.conteos_diarios(limpio[e], fr, dias) if e in con_dato else vacio).tolist()
+                    for e in todas] for fr in wind.FRANJAS}
+    trazas = {fr: {} for fr in wind.FRANJAS}
+    orden = iter(range(len(franja_de_traza)))
+    for fr in wind.FRANJAS:                       # mismo orden en que mapa_zona añade las trazas
+        for k in reversed(range(len(wind.ETIQUETAS_VEL))):
+            trazas[fr][k] = next(orden)
+    return {"zona": zona, "dias": [f"{d:%Y-%m-%d}" for d in dias], "franjas": list(wind.FRANJAS),
+            "est": est, "c": conteos, "nclases": len(wind.ETIQUETAS_VEL), "petalo_m": cfg["petalo_m"], "ref_percentil": REF_PERCENTIL,
+            "trazas": trazas, "traza_puntos": len(franja_de_traza) - 1, "anot_zona": anot_zona}
+
+
 def _escala_grafica(largo_m: float) -> float:
     """Longitud redonda (1, 2 o 5 × 10^n m) cercana a largo_m."""
     base = 10 ** np.floor(np.log10(largo_m))
     return max(m * base for m in (1, 2, 5) if m * base <= largo_m)
 
 
-def mapa_zona(zona: str, limpio: dict[str, pd.DataFrame], fin: pd.Timestamp) -> go.Figure | None:
+def mapa_zona(zona: str, limpio: dict[str, pd.DataFrame], ini: pd.Timestamp, fin: pd.Timestamp) -> go.Figure | None:
     cfg = ZONAS[zona]
     con_dato = [e for e in cfg["estaciones"] if e in limpio and {data.WS, data.WD} <= set(limpio[e])
                 and limpio[e][[data.WS, data.WD]].notna().all(axis=1).any()]
@@ -145,10 +172,11 @@ def mapa_zona(zona: str, limpio: dict[str, pd.DataFrame], fin: pd.Timestamp) -> 
     todas = cfg["estaciones"]
     ux = np.array([STATIONS[e].easting for e in todas]); uy = np.array([STATIONS[e].northing for e in todas])
     mx, my = A_MERC.transform(ux, uy)
-    hover = []
+    hover, hover_sensor = [], []
     for e in todas:
         s = sensor_at(e, "viento", f"{fin:%Y-%m-%d}")
         sensor = f"{s.kind} ~{s.height_m:g} m" if s and s.height_m else (s.kind if s else "sensor s/d")
+        hover_sensor.append(sensor)
         if e in con_dato:
             (_, cd, nd), (_, cn, nn) = rosas[(e, "día")], rosas[(e, "noche")]
             hover.append(f"<b>{e}</b><br>{sensor}<br>calma: día {cd:.0f} % ({nd} h) · noche {cn:.0f} % ({nn} h)")
@@ -192,6 +220,9 @@ def mapa_zona(zona: str, limpio: dict[str, pd.DataFrame], fin: pd.Timestamp) -> 
     formas = [dict(type="line", x0=bx0, x1=bx1, y0=by, y1=by, line=dict(color=INK, width=3), layer="above")]
     anotaciones.append(dict(x=(bx0 + bx1) / 2, y=by, text=f"{largo / 1000:g} km", showarrow=False, yshift=10,
                             font=dict(size=11, color=INK), bgcolor=FONDO_ETIQUETA))
+
+    fig.update_layout(meta={"rosas": _datos_periodo(zona, cfg, todas, con_dato, limpio, hover_sensor, ini, fin,
+                                                    franja_de_traza, anot_zona=1 + len(todas))})  # tras la atribución y las etiquetas
 
     def visibles(fr: str) -> list[bool]:
         return [f is None or f == fr for f in franja_de_traza]
