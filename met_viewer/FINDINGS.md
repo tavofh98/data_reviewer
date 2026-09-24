@@ -503,8 +503,28 @@ Sarallenque_MQG-15-02 el 2026-04-06 (4.62 mm en una hora) y el 2026-05-30 (2.82 
 - Dique_pie_botadero, prueba del 16/08: la hora de las 12 está en NaN en `Rain_mm_Tot`; la prueba
   quedó fuera de la serie, coherente con la nota.
 
-**Calacaja: resolución de 0.034 mm.** El 99.3 % de sus valores son múltiplos de 0.034 y ninguno es
-un múltiplo impar de 0.017 (la resolución del ClimaVUE). Hipótesis: multiplicador del programa
-duplicado, que doblaría su lluvia (99 y 151 mm por año hidrológico; la mitad, 50 y 75). Revisar el
-programa del datalogger.
+**Lluvia duplicada en ClimaVUE (revisado 2026-09-24, copia de la base del 2026-09-22).** Un ClimaVUE
+suma de 0.017 en 0.017 mm, así que en una serie sana alrededor de la mitad de las horas con lluvia
+son múltiplos impares de 0.017: 51–70 % en Chalsos, DME3_Cortadera, Sarallenque_MQG-15-02,
+Cerro_Salviani, Titire, Charaque y Apacheta. Si cada incremento vale dos volcados, esa proporción
+cae a cero:
+
+| Estación | % de horas en múltiplo impar de 0.017 | Tramo |
+|---|---|---|
+| Calacaja | 1.9 (0 en casi todos los trimestres) | desde su primer dato (2022-12) hasta hoy |
+| Ilo | 0–8 | todo el periodo con ClimaVUE (2022-T4 → 2024-T4); desde 2025-T3, pluviómetro de 0.1 mm |
+| Planta_Concentradora | 0–11 | todo el periodo con ClimaVUE (2022-T4 → 2026-T1); desde 2026-02, Young de 0.1 mm |
+| Dique_pie_botadero | 50–64 hasta 2025-T2; 0–10 desde 2025-T4 | nuevo desde la segunda mitad de 2025 |
+
+En 2026 algunas series vienen redondeadas a dos decimales y el redondeo ensucia el test (Dique
+2026-T3 da 31 %): allí no se interpreta.
+
+Hipótesis: cada incremento registrado vale dos volcados del ClimaVUE (multiplicador del programa o
+lectura doble del acumulado del sensor), y la lluvia de esos tramos sería la mitad de la
+registrada. Encaja con lo observado en Dique: de 13 mm en 2024-25 a 222 mm en 2025-26, y en agosto
+de 2026 el doble que sus vecinas. En Calacaja los totales no lo deciden: en 61 días de lluvia común
+suma 229 mm frente a 201–276 del grupo Sur (razón 0.98), pero está 600 m por debajo de la siguiente
+(2 332 m frente a 2 919–3 750) y su mediana horaria con lluvia es 0.17 mm frente a 0.03 en los
+ClimaVUE vecinos. Lo que cierra la duda: comparar el programa CRBasic de Calacaja con el de un
+ClimaVUE sano (DME3_Cortadera) y una prueba con volumen conocido cuyo resultado quede en la serie.
 
