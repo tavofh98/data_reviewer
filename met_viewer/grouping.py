@@ -16,6 +16,9 @@ altura del sensor (2 m / 10 m) no manda; lo que se compara es de dónde viene el
 La correlación de anomalías de velocidad era débil (r típica 0.15–0.35 a < 25 km) y quita el ciclo
 diario, que es donde se ven los fallos de orientación (ver WIND_REVIEW.md). Los tramos de
 stations.WIND_EXCLUDED no cuentan; una estación sin 60 días útiles va aparte, en su propia figura.
+El régimen no ve la velocidad de las horas en calma, así que después se saca de su grupo a la
+estación cuya FORMA del ciclo diario de velocidad (cada hora dividida por la media del día, sin
+depender de la altura del sensor) se aparta del resto del grupo más de MAX_DIF_CICLO_VEL.
 
 Agrupar por variable y no con una distancia combinada: una estación puede parecerse a unas
 en temperatura y a otras en humedad o viento, y así ninguna se queda sin comparación.
@@ -56,6 +59,11 @@ MIN_DIAS_COMUNES = 60
 # Dique_pie_botadero (0.55, arrastrado al altiplano a 66 km) y conserva al miembro real más
 # débil, Planta_Concentradora (0.68; medido 2025-09 → 2026-09).
 MIN_PARECIDO_VIENTO = 0.60
+# Viento: diferencia media máxima (por hora, en veces la media diaria) entre la forma del ciclo de
+# velocidad de una estación y la del resto de su grupo. Camp_Quellaveco, en calma casi toda la
+# noche, queda a 0.33 de su estación más parecida; la mediana de los pares de la red es 0.18
+# (medido 2025-09 → 2026-09).
+MAX_DIF_CICLO_VEL = 0.25
 MAX_POR_GRUPO = 6
 APARTE = ("Ilo",)
 SALIDA = Path(__file__).parent / "groups_draft.py"
@@ -124,6 +132,35 @@ def distancia_regimen(limpio: dict[str, pd.DataFrame]) -> tuple[pd.DataFrame, li
     d = (1 - m.T @ m).clip(lower=0).to_numpy(copy=True)
     np.fill_diagonal(d, 0.0)
     return pd.DataFrame(d, index=m.columns, columns=m.columns), fuera
+
+
+def distancia_ciclo_velocidad(limpio: dict[str, pd.DataFrame], estaciones) -> pd.DataFrame:
+    """Diferencia media por hora entre ciclos diarios de velocidad relativos (ciclo / su media)."""
+    ciclos = {}
+    for e in estaciones:
+        s = viento_util(e, limpio[e])[data.WS].dropna()
+        c = s.groupby(s.index.hour).mean().reindex(range(24))
+        if len(s) >= 24 * MIN_DIAS_COMUNES and c.notna().all():
+            ciclos[e] = c / c.mean()
+    c = pd.DataFrame(ciclos)
+    return pd.DataFrame({a: {b: float((c[a] - c[b]).abs().mean()) for b in c} for a in c})
+
+
+def separar_por_ciclo(dist: pd.DataFrame, grupos: list[list[str]], maximo: float) -> tuple[list[list[str]], list[str]]:
+    """Saca de su grupo, de una en una y empezando por la peor, a la estación cuya diferencia media
+    con el resto es > maximo; así una estación rara no arrastra fuera a las que se le comparan."""
+    quedan, sueltas = [], []
+    for g in grupos:
+        resto = list(g)
+        while len(con := [e for e in resto if e in dist]) > 1:
+            dif = {e: dist.loc[e, [o for o in con if o != e]].mean() for e in con}
+            peor = max(dif, key=dif.get)
+            if dif[peor] <= maximo:
+                break
+            resto.remove(peor)
+            sueltas.append(peor)
+        quedan.append(resto)
+    return quedan, sueltas
 
 
 def separar_sueltas(dist: pd.DataFrame, grupos: list[list[str]], minimo: float) -> tuple[list[list[str]], list[str]]:
@@ -238,13 +275,24 @@ def main() -> None:
         else:
             dists[var] = distancia(limpio, var)
         grupos = cortar(dists[var], args.max)
-        sueltas = []
+        sueltas, por_ciclo = [], []
         if var == data.WS:
             grupos, sueltas = separar_sueltas(dists[var], grupos, MIN_PARECIDO_VIENTO)
+            dv = distancia_ciclo_velocidad(limpio, dists[var].index)
+            grupos, por_ciclo = separar_por_ciclo(dv, grupos, MAX_DIF_CICLO_VEL)
         mediana = pd.Series({e: df[var].median() for e, df in limpio.items() if var in df})
         lineas += informe(var, dists[var], grupos, mediana, "cos" if var == data.WS else "r")
+        if var == data.WS:
+            for i, g in enumerate(grupos, 1):
+                dif = [dv.loc[e, [o for o in g if o != e]].mean() for e in g if e in dv and len(g) > 1]
+                if dif:
+                    lineas.append(f"G{i}: diferencia de ciclo de velocidad con el resto del grupo, máx {max(dif):.2f}")
         if sueltas:
             lineas.append(f"Sin pareja (parecido medio < {MIN_PARECIDO_VIENTO}), una figura cada una: {', '.join(sueltas)}")
+        if por_ciclo:
+            lineas.append(f"Ciclo de velocidad distinto (diferencia media > {MAX_DIF_CICLO_VEL}), "
+                          f"una figura cada una: {', '.join(por_ciclo)}")
+            sueltas += por_ciclo
         if fuera:
             lineas.append(f"Fuera del agrupamiento (stations.WIND_EXCLUDED), una figura cada una: {', '.join(fuera)}")
         por_var[var] = grupos + [[e] for e in sueltas + fuera]

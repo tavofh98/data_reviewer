@@ -300,10 +300,11 @@ rugosidad que no se conoce).
 |---|---|---|---|
 | Camp_Quellaveco | T | mismo ciclo diario que Charaque, pero la diferencia mensual salta entre ~+0.4 y −3 °C (dic-2024 → feb-2026) y sube a +1.5 desde mar-2026 | cambios de calibración o de sensor; el QC no detecta escalones en T |
 | Chancado_primario | T | +2.2 a +2.6 °C de día respecto a sus vecinas, igual de noche; amplitud diaria de ~10 °C (2025) a 14–15 °C (jun–jul 2026) | radiación sobre el sensor (protector solar), empeorando |
-| Dique_pie_botadero | viento | ciclo invertido (fuerte de noche 4.7–5.1 m/s, flojo a mediodía 2.2), nunca baja de ~1.1 m/s, constancia direccional 0.98, no correlaciona con ninguna vecina | flujo de drenaje real al pie del botadero o fallo del anemómetro |
+| Dique_pie_botadero | viento | (1) desde 2024-T2, 0–0.5 % de las horas con viento de la mitad este (NNE–SSO), de día y de noche, cuando Tala-1 (0.5 km), Alto_Tala y Papujune reciben de noche el 51–83 % del NE–ENE; la dirección solo recorre 260°–278° en el día (Tala-1: 65° → 261°). (2) Nunca en calma: percentil 1 de 1.5–2.3 m/s, frente a un 3–32 % de calmas nocturnas en las vecinas. (3) El 2026-07-27 la velocidad de día baja de ~5 a ~2.3 m/s (Tala-1 sigue en 4–6), la de noche sube de ~4 a ~5.4 y su dirección pasa de ~300° a 271–274°: el ciclo invertido empieza ahí, antes el día doblaba a la noche. DEM (SRTM, anterior al botadero): cañón con horizonte de 35–42° hacia SE–S y abierto al OSO (247°, 1°) y, menos, al ENE (12°) | exposición: ClimaVUE ~2 m junto al shelter y a la ladera (dato del usuario, 2026-09-24); el sector este tapado o el flujo encauzado por el cañón y el botadero; qué cambió el 2026-07-27 está por confirmar en campo |
 | Chalsos | dirección | ~270° de noche y 120–160° de día, al revés que Calientes1/Cortadera/Tala_Legal (~100° / ~270°) | veleta invertida o mal orientada |
 | Huachunta | dirección | veleta pegada en ~152° (mar–may 2026); constancia direccional = 1.00 | fallo mecánico |
 | Sarallenque | viento | desde 2025-07-14 dirección y velocidad cambian a la vez; de noche viene de ~250° en vez de ~78°; sector S–SO–O vacío | traslado del shelter girado 180° y a un punto con obstáculo al S–SO–O (ver §9) |
+| Camp_Quellaveco | viento | desde el 2022-10-06 (06–12 h) la velocidad nocturna cae a 0.3–0.6 veces la de sus vecinas (antes 0.8–1.0), con 25–70 % de horas en calma, y la dirección nocturna deja de seguirlas (de ~80° a 120–260°); de día sopla 1.3–2 veces más que ellas. Ese mismo día, la presión reducida baja 4.9 mbar (+7.0 → +2.2) | reubicación de la estación o de la torre a un punto más alto (~60 m) y resguardado de noche (criterios B y C de WIND_REVIEW, más `BARO_DEV`). También coinciden viento y presión el 2020-10-27; el escalón de −2.5 mbar del 2024-03-24 no tiene cambio de viento esa semana |
 | Papujune | T | 132 h con 0.0 exacto (abr-2026) | sensor caído (descartado por `STUCK`) |
 | Charaque | HR | 752 h en 101.2 % (ene–abr 2025), aceptadas por el rango | calibración |
 | Apacheta / Minas_Sur | HR | cambio de nivel en ene-2026 / may-2026 | cambio de sensor (Apacheta: mismo mes que su pluviómetro) |
@@ -414,9 +415,53 @@ Hasta confirmarlo en campo, Sarallenque queda fuera de cualquier agrupación de 
 
 ## 10. Pendientes
 
-- Implementar la sección de viento (§9).
+- Viento (§9), 2026-09-24: sale de la vista por grupo. En la vista por variable: rosas día/noche por zona (Mina, Sur, Altiplano; `rose_maps.py`) y, por grupo de viento, serie horaria y ciclo diario de velocidad. Se probaron y retiraron el ciclo de dirección, la constancia diaria y el mapa hora × día: saturaban sin aportar. Los grupos de viento separan además por forma del ciclo de velocidad (`grouping.MAX_DIF_CICLO_VEL`), que saca a Camp_Quellaveco.
+- Camp_Quellaveco: el anemómetro se calibró el 2026-09-10 (dato del usuario). Desde ese día aparecen horas en 0.00 exacto (antes 0 %, después 8–50 % de las horas en la mayoría de los días) y la razón día/vecinas baja de ~1.4 a ~1.05. Preguntar qué se hizo.
 - Curar `groups_draft.py` → `groups.py`.
 - Regla de QC para escalones de nivel en T y HR (caso Camp_Quellaveco), comparando con vecinas.
 - Confirmar con partes de campo los casos de §8 y la coordenada de Campamento Quellaveco.
-- Lluvia y radiación: pendientes.
+- Radiación solar: en pausa por decisión del usuario (2026-09-24); se sigue bien sin el visor.
+- Lluvia y UV: exploradas (§11); falta decidir figuras y QC antes de llevarlas al visor. Para los descartes de lluvia, esperar el historial de intervenciones.
 - Sarallenque: medir con brújula la marca de norte del WindSonic, conseguir la fecha y la ubicación anterior del traslado de julio de 2025 y, con eso, añadir una corrección de dirección por tramos en `stations.py` (como `BARO_OFFSET`).
+
+---
+
+## 11. Radiación, UV y lluvia (exploración, 2026-09-24)
+
+Datos 2024-09 → 2026-09, sin QC. Solo estaciones con la variable en `VARIABLES_REPORTE`.
+
+**Radiación solar (`SlrW_Avg`, 10 estaciones).** Parecido = correlación del índice de claridad
+horario (cada hora de 9 a 15 h dividida por su percentil 95 en ±15 días). Las 9 de la mina y
+Cortadera se parecen entre sí con r = 0.84–0.97. Vizcachas no pasa de 0.49 con ninguna, lo normal
+a 58 km y siendo el único piranómetro del altiplano; su nivel está bien (1.00–1.08). Nivel (percentil 95 de mediodía por mes / mediana de la red):
+
+| Estación | Nivel relativo | Nota |
+|---|---|---|
+| Cortadera | 1.27–1.36 desde 2024-T4 (0.87 antes) | factor de conversión erróneo (dato del usuario, 2026-09-24); lo corrige el usuario |
+| Tala_Legal | 1.33–1.42 hasta 2025-T4; 0.91 desde 2026-T2 | mismo síntoma que Cortadera, corregido en 2026 |
+| Camp_Quellaveco | 0.84–0.94 en todo el periodo | constante |
+| Alto_Quellaveco | 0.84–0.91 en 2025, 0.98–1.01 desde 2026-T2 | recuperado |
+
+**UV (`RadUV_E_Avg`, 9 estaciones).** Mina: r = 0.82–0.91 entre sí. Huachunta–Vizcachas: 0.55.
+Ilo no se parece a ninguna (≤ 0.12). Nivel: Vizcachas 1.16–1.54 veces la red y subiendo;
+Altarani 1.22–1.27 hasta 2025-T1 y 1.0 después (escalón); Huachunta en 0 desde 2026-T2; Ilo en
+0 durante 2024-T3 y T4.
+
+**Lluvia (`Rain_mm_Tot`, 26 estaciones).** Parecido = Jaccard de días con ≥ 1 mm y Spearman de
+totales diarios, con las horas > 40 mm descartadas. Resoluciones: 0.1 mm (cubeta) en 12
+estaciones, 0.017 mm (ClimaVUE) en 11, 0.034 en Calacaja y mezcla en Calientes1. Asociaciones:
+
+- Quellaveco (Altarani, Alto_Quellaveco, Sarallenque, Sarallenque_MQG, Camp_Quellaveco, Mina_Norte,
+  Minas_Sur): J = 0.59–0.82.
+- Tala (Tala-1, Papujune, Charaque, Tala_Legal, Planta_Concentradora, Cerro_Salviani): J = 0.64–0.86.
+- Sur (Cortadera, Apacheta, Chalsos, Calientes1, DME3_Cortadera, PMC-4_met, Calacaja): J = 0.41–0.74.
+- Altiplano (Huachunta, Vizcachas, Titire): J = 0.57–0.66, Spearman 0.36–0.52: lluvia convectiva y
+  dispersa.
+- Ilo aparte (8 y 49 mm por año hidrológico).
+
+Valores imposibles: horas > 40 mm en Chancado_primario (21, hasta 7 601 mm), Ilo (9, hasta
+7 999), Calientes1, Cerro_Salviani, Dique_pie_botadero y Mina_Norte (1 cada una). Por año
+hidrológico, sin esas horas: Dique_pie_botadero suma 13 mm en 2024-25 frente a 150–340 de sus
+vecinas y 222 en 2025-26; Calientes1 pasa de 194 a 88 mm mientras sus vecinas se mantienen.
+Pendiente: cruzar con el historial de intervenciones (volcados de prueba = falsos positivos).
+

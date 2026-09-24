@@ -1,11 +1,14 @@
 """HTML de meteorología en dos vistas, para comparar:
 
-- por variable: una sección por variable y una figura por grupo; cada variable usa sus propios
-  grupos (la presión usa los de temperatura, porque su desvío no define parecido).
-- por grupo: un agrupamiento único; una sección por grupo con sus cuatro figuras.
+- por variable: las variables que no caben en la vista por grupo, cada una con sus propios
+  grupos. Hoy, solo el viento.
+- por grupo: un agrupamiento único (de T y HR); una sección por grupo con temperatura, humedad y
+  desvío de presión. El viento no va aquí: dentro de esos grupos no guarda relación.
 
-Variables: temperatura, humedad relativa, velocidad del viento y desvío de presión (presión
-reducida a 4 000 m menos la mediana de las vecinas; ver qc.baro_deviation).
+Variables: temperatura, humedad relativa, viento y desvío de presión (presión reducida a 4 000 m
+menos la mediana de las vecinas; ver qc.baro_deviation). El viento, solo en la vista por
+variable: mapas de rosas por zona (rose_maps.py) y, por cada grupo de viento, la serie horaria
+de velocidad y su ciclo diario medio.
 Los huecos en las líneas son horas sin dato o descartadas; los descartes del QC se ven como
 cruces en la traza «Descartado por QC», oculta al abrir (clic en la leyenda para verla).
 """
@@ -19,6 +22,8 @@ import plotly.graph_objs as go
 import plotly.io as pio
 
 import data
+import rose_maps
+import wind
 from stations import STATIONS, sensor_at
 
 # Paleta categórica de referencia (skill dataviz), orden fijo; validada para 6 series.
@@ -109,7 +114,58 @@ def figura(grupo: list[str], var: str, series: dict[str, pd.Series],
     return fig
 
 
-VARIABLES_VISTA = (data.TEMP, data.RH, data.WS, "BP_DEV")
+VARIABLES_VISTA = (data.WS,)      # T, HR y presión van solo en la vista por grupo
+VARIABLES_GRUPO = (data.TEMP, data.RH, "BP_DEV")
+
+# --- Viento (vista por variable) -------------------------------------------------------------
+
+TITULO_VIENTO = "Viento"
+NOCHE = "rgba(137, 135, 129, 0.12)"      # franja de noche (22–06 h) en el ciclo diario
+NOTA_MAPAS = (
+    "Rosas de procedencia: cada pétalo es el % de las horas de la franja en que el viento vino de "
+    "ese sector de 22.5°, apilado por velocidad. Las calmas (< 0.5 m/s) no tienen pétalo; su % "
+    "está en el cursor sobre cada estación. Día y noche comparten escala dentro de cada zona, no "
+    "entre zonas.")
+NOTA_GRUPOS = (
+    "Grupos de viento (groups*.py): por régimen de dirección y forma del ciclo diario de velocidad; "
+    "ver grouping.py. La leyenda indica el sensor y su altura. Banda gris del ciclo diario: noche "
+    "(22–06 h). Criterios de revisión en WIND_REVIEW.md.")
+
+
+def fig_ciclo_velocidad(grupo: list[str], limpio, fin) -> go.Figure | None:
+    """Velocidad media por hora del día; mismo color por estación que la serie del grupo."""
+    fig = go.Figure()
+    for i, est in enumerate(grupo):
+        if est not in limpio or data.WS not in limpio[est] or limpio[est][data.WS].notna().sum() == 0:
+            continue
+        fig.add_trace(go.Scatter(x=list(range(24)), y=_lista(wind.ciclo_velocidad(limpio[est])),
+                                 name=_nombre(est, data.WS, fin), mode="lines+markers",
+                                 line=dict(width=2, color=SERIES[i % len(SERIES)]), marker=dict(size=5)))
+    if not fig.data:
+        return None
+    _layout(fig, "Ciclo diario medio de velocidad (m/s)")
+    fig.update_layout(showlegend=True)       # con una sola estación plotly la oculta, y lleva el sensor
+    fig.update_xaxes(range=[-0.5, 23.5], tickvals=list(range(0, 24, 3)), title_text="Hora del día")
+    for x0, x1 in ((-0.5, 6), (22, 23.5)):
+        fig.add_vrect(x0=x0, x1=x1, fillcolor=NOCHE, line_width=0, layer="below")
+    return fig
+
+
+def _seccion_viento(grupos: list[list[str]], limpio, flags, dev_horario, h: "_Html", fin) -> str:
+    mapas = [h.div(f) for z in rose_maps.ZONAS if (f := rose_maps.mapa_zona(z, limpio, fin)) is not None]
+    bloques = []
+    for n, grupo in enumerate(grupos, 1):
+        figs = [f for f in (_figura_de(grupo, data.WS, limpio, flags, dev_horario, fin, TITULOS[data.WS]),
+                            fig_ciclo_velocidad(grupo, limpio, fin)) if f is not None]
+        if figs:
+            bloques.append(f'<h3>G{n} · {html.escape(", ".join(grupo))}</h3>' + "".join(h.div(f) for f in figs))
+    if not (mapas or bloques):
+        return ""
+    return (f'<section id="{data.WS}"><h2>{TITULO_VIENTO}</h2>'
+            + _resumen_qc(flags[flags.variable.isin([data.WS, data.WD])])
+            + f'<h3>Rosas por zona</h3><p class="est">{html.escape(NOTA_MAPAS)}</p>' + "".join(mapas)
+            + f'<h3>Velocidad por grupo</h3><p class="est">{html.escape(NOTA_GRUPOS)}</p>' + "".join(bloques)
+            + "</section>")
 
 
 class _Html:
@@ -145,6 +201,10 @@ def construir_por_variable(grupos: dict[str, list[list[str]]], limpio, flags, de
     `grupos` es {variable: [grupo, ...]}; la presión usa los grupos de temperatura."""
     h, secciones = _Html(), []
     for var in VARIABLES_VISTA:
+        if var == data.WS:
+            if sec := _seccion_viento(grupos[var], limpio, flags, dev_horario, h, fin):
+                secciones.append(sec)
+            continue
         divs = []
         for n, grupo in enumerate(grupos[data.TEMP if var == "BP_DEV" else var], 1):
             fig = _figura_de(grupo, var, limpio, flags, dev_horario, fin, f"G{n} · {', '.join(grupo)}")
@@ -154,15 +214,15 @@ def construir_por_variable(grupos: dict[str, list[list[str]]], limpio, flags, de
             nombre = data.BP if var == "BP_DEV" else var
             secciones.append(f'<section id="{var}"><h2>{html.escape(TITULOS[var])}</h2>'
                              + _resumen_qc(flags[flags.variable == nombre]) + "".join(divs) + "</section>")
-    indice = [(v, TITULOS[v].split(" (")[0]) for v in VARIABLES_VISTA]
+    indice = [(v, TITULO_VIENTO if v == data.WS else TITULOS[v].split(" (")[0]) for v in VARIABLES_VISTA]
     return _pagina("Meteorología por variable", indice, secciones, ini, fin, borrador)
 
 
 def construir_por_grupo(grupos: list[list[str]], limpio, flags, dev_horario, ini, fin, borrador: bool) -> str:
-    """Vista por grupo: un agrupamiento único; una sección por grupo con sus cuatro figuras."""
+    """Vista por grupo: un agrupamiento único; una sección por grupo con T, HR y desvío de presión."""
     h, secciones, indice = _Html(), [], []
     for n, grupo in enumerate(grupos, 1):
-        divs = [h.div(f) for var in VARIABLES_VISTA
+        divs = [h.div(f) for var in VARIABLES_GRUPO
                 if (f := _figura_de(grupo, var, limpio, flags, dev_horario, fin, TITULOS[var])) is not None]
         if divs:
             indice.append((f"g{n}", f"G{n}"))
@@ -244,6 +304,7 @@ def _pagina(titulo: str, indice: list[tuple[str, str]], secciones: list[str],
  header a{{margin-right:12px;color:#2a78d6;text-decoration:none}}
  section{{background:{SUPERFICIE};border:1px solid rgba(11,11,11,.1);border-radius:8px;padding:12px;margin:16px 0}}
  h1{{font-size:20px;margin:0 0 4px}} h2{{font-size:17px;margin:0}}
+ h3{{font-size:15px;margin:20px 0 4px;padding-top:12px;border-top:1px solid {GRID}}}
  .est{{color:{INK_2};margin:4px 0}} .qc{{color:{MUTED};font-size:13px;margin:0 0 8px}}
  .aviso{{color:{CRITICO};font-weight:600}}
  #modo{{font:inherit;font-size:13px;padding:4px 10px;margin:4px 0 6px;border:1px solid {MUTED};border-radius:6px;
