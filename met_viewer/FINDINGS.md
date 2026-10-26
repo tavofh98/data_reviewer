@@ -1,6 +1,6 @@
 # Visor de meteorología por grupos — hallazgos y decisiones
 
-_Actualizado: 2026-09-23 · Base: `database_duck/anglo_ambiental.db` (datos 2019-09 → 2026-09-23)_
+_Actualizado: 2026-09-28 · Base: `database_duck/anglo_ambiental.db` (datos 2019-09 → 2026-09-28)_
 
 Objetivo: un visor HTML por matriz donde las estaciones se comparan dentro de grupos de
 comportamiento similar, sobre datos que pasaron un control de calidad automático fuerte.
@@ -51,7 +51,7 @@ Excel de `anglo_reporte` no se toca.
   las altitudes declaradas difieren de las barométricas hasta en 1 495 m (Calacaja). La tabla
   tiene además valores copiados (Calientes1 y Charaque comparten este; dos pares comparten
   altitud).
-- **Fuente válida: `Estaciones AAQ.kmz`** (raíz del workspace, ubicado en Google Earth). Con sus
+- **Fuente válida: `references/Estaciones AAQ.kmz`** (ubicado en Google Earth). Con sus
   coordenadas, DEM y altitud barométrica coinciden en las 24 estaciones con barómetro.
 - **Altitud de trabajo: la barométrica** (`z_baro`), anclada al DEM: |z_baro − z_dem| ≤ 30 m,
   mediana 10 m.
@@ -246,10 +246,28 @@ Grupos actuales (vista por grupo, T + HR, 2025-09 → 2026-09):
 | G2 | 0.75 | Calacaja, Calientes1, Chalsos, Cortadera, DME3_Cortadera |
 | G3 | 0.93 | Alto_Quellaveco, Minas_Sur, Sarallenque_MQG-15-02 |
 | G4 | 0.85 | Alto_Tala, Cerro_Salviani, Papujune |
-| G5 | 0.91 | Apacheta, Papujune, Planta_Concentradora |
+| G5 | 0.91 | Apacheta, Mina_Norte (a mano), Papujune, Planta_Concentradora |
 | G6 | 0.86 | Camp_Quellaveco, Chancado_primario, Dique_pie_botadero |
 | G7 | 0.86 | Dique_pie_botadero, Minas_Sur, Tala-1 |
 | G8 | 0.91 | Huachunta, Titire, Vizcachas |
+
+**Estaciones con menos de 60 días quedan fuera sin aviso** (2026-09-28). `distancia()` descarta
+la estación con menos de `24 · MIN_DIAS_COMUNES` horas válidas, y en T y HR no hay figura propia
+para las que quedan fuera (en viento sí). Caso Mina_Norte: la base tiene T/HR/P desde 2021, pero
+hasta el 2026-08-28 18:00 son registros en 0 (sin ClimaVUE) que el QC descarta como `ZERO_RECORD`;
+quedan ~30 días válidos y la estación no salía en temperatura, humedad ni presión. `main.py` sí lo
+avisa («estaciones con datos que no están en ningún grupo»). Decisión del usuario: no cambiar el
+criterio del programa, sino añadirla a mano en `groups_draft.py` con la misma regla de `cortar()`,
+usando la correlación de anomalías del tramo válido (2026-08-28 18:00 → 2026-09-28 12:00):
+
+| Variable | Más correlacionadas | Ubicación |
+|---|---|---|
+| AirTC_Avg | Planta_Concentradora 0.92, Papujune 0.88, Minas_Sur 0.88 | G1 lleno → trío nuevo con Papujune y Planta_Concentradora |
+| RH_Avg | Charaque 0.95, Altarani 0.94, Minas_Sur 0.94 | G1 lleno → trío nuevo con Altarani y Charaque |
+| combinado | Planta_Concentradora 0.92, Minas_Sur 0.91, Altarani 0.90 | se une a G5 |
+
+Regenerar `groups_draft.py` con `grouping.py` borra esta adición: repetirla hasta que Mina_Norte
+tenga 60 días (~2026-10-27) o guardar el borrador como `groups.py`.
 
 Nota: la métrica del agrupamiento quita el ciclo diario; el ojo, con el botón «centrado», ve el
 ciclo diario. Dos estaciones pueden compartir el tiempo del día a día y aun así verse distintas si
@@ -303,8 +321,10 @@ rugosidad que no se conoce).
 | Dique_pie_botadero | viento | (1) desde 2024-T2, 0–0.5 % de las horas con viento de la mitad este (NNE–SSO), de día y de noche, cuando Tala-1 (0.5 km), Alto_Tala y Papujune reciben de noche el 51–83 % del NE–ENE; la dirección solo recorre 260°–278° en el día (Tala-1: 65° → 261°). (2) Nunca en calma: percentil 1 de 1.5–2.3 m/s, frente a un 3–32 % de calmas nocturnas en las vecinas. (3) El 2026-07-27 la velocidad de día baja de ~5 a ~2.3 m/s (Tala-1 sigue en 4–6), la de noche sube de ~4 a ~5.4 y su dirección pasa de ~300° a 271–274°: el ciclo invertido empieza ahí, antes el día doblaba a la noche. DEM (SRTM, anterior al botadero): cañón con horizonte de 35–42° hacia SE–S y abierto al OSO (247°, 1°) y, menos, al ENE (12°) | exposición: ClimaVUE ~2 m junto al shelter y a la ladera (dato del usuario, 2026-09-24); el sector este tapado o el flujo encauzado por el cañón y el botadero; qué cambió el 2026-07-27 está por confirmar en campo |
 | Chalsos | dirección | ~270° de noche y 120–160° de día, al revés que Calientes1/Cortadera/Tala_Legal (~100° / ~270°) | veleta invertida o mal orientada |
 | Huachunta | dirección | veleta pegada en ~152° (mar–may 2026); constancia direccional = 1.00 | fallo mecánico |
-| Sarallenque | viento | desde 2025-07-14 dirección y velocidad cambian a la vez; de noche viene de ~250° en vez de ~78°; sector S–SO–O vacío | traslado del shelter girado 180° y a un punto con obstáculo al S–SO–O (ver §9) |
+| Sarallenque | viento | desde 2025-07-14 dirección y velocidad cambian a la vez; de noche viene de ~250° en vez de ~78°; sector S–SO–O vacío. Reorientado el 2026-09-25 (marca N al norte; antes al sur) y shelter desplazado unos metros al E | confirmado en campo: sensor orientado al sur (180°). De día, además, la cara sur estaba tapada; con el desplazamiento ya no (ver §9) |
+| Apacheta | presión | 706 h descartadas por `STUCK` en la ventana 2026-08-29 → 2026-09-28 | barómetro pegado; sin revisar |
 | Camp_Quellaveco | viento | desde el 2022-10-06 (06–12 h) la velocidad nocturna cae a 0.3–0.6 veces la de sus vecinas (antes 0.8–1.0), con 25–70 % de horas en calma, y la dirección nocturna deja de seguirlas (de ~80° a 120–260°); de día sopla 1.3–2 veces más que ellas. Ese mismo día, la presión reducida baja 4.9 mbar (+7.0 → +2.2) | reubicación de la estación o de la torre a un punto más alto (~60 m) y resguardado de noche (criterios B y C de WIND_REVIEW, más `BARO_DEV`). También coinciden viento y presión el 2020-10-27; el escalón de −2.5 mbar del 2024-03-24 no tiene cambio de viento esa semana |
+| Camp_Quellaveco | viento nocturno | tras la calibración del 2026-09-10, el 37 % de las horas de noche en 0.00 exacto (antes 0 %), en noches enteras (14→15, 16→17, 22→23 sep) mientras Chancado (0.7 km) sopla 1.3–2.3 m/s del NE; la dirección queda congelada toda la noche con décimas de grado (94.6–95.1°, 66.2°, 87.4°). Antes de la calibración, la dirección nocturna cambiaba 43° de una hora a otra (Chancado: 20°) y con < 0.5 m/s apuntaba a 205–245°, contra el drenaje NE–E de las vecinas; parecido con Chancado: 36° de diferencia mediana en ago–sep 2025, 54° antes y 49° después. De día, sin cambio (oeste en el 98–100 % de las horas; +6° desde el 14-sep) | después: sensor que no arranca (rozamiento, umbral o programa); antes: ruido de un sensor en su umbral, ya peor que en 2025. De noche solo valen las horas con ≥ 0.5 m/s. Criterio G de WIND_REVIEW |
 | Papujune | T | 132 h con 0.0 exacto (abr-2026) | sensor caído (descartado por `STUCK`) |
 | Charaque | HR | 752 h en 101.2 % (ene–abr 2025), aceptadas por el rango | calibración |
 | Apacheta / Minas_Sur | HR | cambio de nivel en ene-2026 / may-2026 | cambio de sensor (Apacheta: mismo mes que su pluviómetro) |
@@ -399,7 +419,7 @@ y gráficos: mapa, rosas, series y fotos): `sarallenque_wind/reporte_viento_sara
 Con el traslado de julio de 2025, las dos corresponden al punto **nuevo**; la ubicación anterior
 no se conoce.
 
-**Tratamiento:**
+**Tratamiento (hasta 2026-09-24; revisado abajo, tras la visita):**
 
 | Tramo | Dirección de noche | Dirección de día | Velocidad |
 |---|---|---|---|
@@ -408,21 +428,84 @@ no se conoce.
 | 2025-09-15 → ~2025-11-16 | corregible por tramo cuando se mida el ángulo (~200° y ~140° según las estimaciones semanales) | no comparable | no comparable |
 | desde ~2025-11-17 | válida restando 180° (confirmar con brújula) | no comparable: sector S–O tapado | no comparable de día (+30 %) |
 
-Hasta confirmarlo en campo, Sarallenque queda fuera de cualquier agrupación de viento desde el
-2025-07-14.
+### Sarallenque: visita del 2026-09-25
+
+**Dato de campo (usuario, 2026-09-28).** El 2026-09-25 se reorientó el WindSonic: debía tener la
+marca N hacia el norte y la tenía hacia el sur. Además, el shelter quedó desplazado unos metros al
+este (~3 m y ~2 m según campo), más expuesto por la cara sur y más cubierto por la cara este. El
+desplazamiento está por debajo de la precisión del GPS: la coordenada de `stations.py` no cambia.
+
+**Verificado en los datos** (base hasta 2026-09-28 15:00; direcciones = mediana vectorial sin
+calmas, ver abajo; MQG = Sarallenque_MQG-15-02 en el mismo periodo):
+
+| Tramo | Día Sar / MQG | Noche Sar / MQG | Velocidad Sar/MQG (día / noche) |
+|---|---|---|---|
+| Antes del traslado (2024-07-14 → 2025-07-14) | 238° / 232° (+7°) | 74° / 95° (−21°) | 0.51 / 0.68 |
+| Tras el traslado, crudo (2025-11-17 → 2026-09-25 10:00) | 133° | 263° | — |
+| Tras el traslado + 180° | 313° / 239° (**+74°**) | 83° / 87° (−4°) | 0.56 / 0.72 |
+| Tras la visita (desde 2026-09-25 20:00; 22 h día, 27 h noche) | 213° / 237° (−24°) | 74° / 45° (+28°) | 0.42 / 0.42 |
+
+- **Hora del cambio.** El 2026-09-25 falta el registro de las 11:00. De 12 a 19 h la dirección
+  (~160°) no encaja con ninguna de las dos orientaciones; desde las 20–21 h la noche ya viene del
+  ENE. Tramo de transición: 2026-09-25 11:00 → 20:00.
+- **Noche: solo el giro de 180°.** Tras la visita vuelve a 74°, igual que antes del traslado; la
+  diferencia hora a hora con MQG pasa de −124° (15→25 sep) a −7° (media vectorial ponderada). El
+  tramo anterior girado 180° queda a 9° del de antes del traslado y a −4° de MQG.
+- **Día: el giro no basta.** Girado 180°, el día del tramo anterior viene del NO (313°), 74° fuera de
+  MQG; tras la visita viene del SSO (213°), cerca de MQG. De noche el giro fue ~190° y de día ~75°:
+  antes y después de la visita no se relacionan por un giro único.
+- **La diferencia con MQG tras la visita no mide todavía un giro residual.** MQG marcó de noche 45°
+  esos días (su habitual: 87–95°) y los signos de día y de noche son opuestos, que no es la firma de
+  un giro del sensor.
+- **La velocidad relativa a MQG bajó**, más de noche (0.68 → 0.42) que de día (0.51 → 0.42). Con
+  ~1 día de datos no se da por cambio.
+- **Método de la dirección** (usuario: mediana vectorial, para que las calmas no sesguen). En
+  Sarallenque la media ponderada por velocidad, la media unitaria y la mediana difieren ≤ 5°, y
+  incluir o no las calmas cambia la mediana ≤ 1° (calmas ≤ 5.6 % de las horas). En MQG de noche,
+  con el viento repartido entre sectores, la diferencia entre métodos llega a 13–14°.
+
+**Hipótesis revisadas** (sustituyen a las de arriba donde se contradicen):
+
+1. **Orientación: confirmada.** La marca N quedó hacia el sur con el traslado de julio de 2025; de
+   ahí el giro de 180° de la noche.
+2. **Obstáculo: era local, pegado a la cara sur.** Unos metros de desplazamiento bastaron para que
+   el viento de día vuelva a llegar del SSO, así que no era el talud ni el tajo lejanos (hipótesis 2
+   de arriba), sino algo contiguo a la cara sur del shelter (el propio shelter o lo que tenía al
+   lado; sin identificar). Mientras estuvo, el viento del SO lo rodeaba y llegaba del NO.
+3. **Cara este más cubierta: posible efecto en la velocidad nocturna.** El drenaje nocturno llega
+   del ENE, por esa cara. Encaja con la bajada de la razón nocturna con MQG a 0.42; sin confirmar.
+
+**Tratamiento (desde 2026-09-28):**
+
+| Tramo | Dirección de noche | Dirección de día |
+|---|---|---|
+| hasta 2025-07-13 | válida | válida |
+| 2025-07-14 → 2025-11-16 | no válida (giros intermedios) | no válida |
+| 2025-11-17 → 2026-09-25 10:00 | válida sumando 180° | no válida (cara sur tapada) |
+| 2026-09-25 11:00 → 20:00 | transición, fuera | transición, fuera |
+| desde 2026-09-25 20:00 | válida (revisar la velocidad con 2 semanas) | válida |
+
+Material: `sarallenque_wind/rosas_orientacion.py` (rosas 2×2 con botón día/noche: antes del
+traslado, tras el traslado, tras el traslado + 180°, tras la visita) y
+`sarallenque_wind/esquema_orientacion.py` (esquema en planta de esta interpretación; posiciones y
+tamaños supuestos).
+
+`stations.WIND_EXCLUDED` sigue excluyendo Sarallenque desde el 2025-07-14 sin fin (pendiente, §10).
 
 ---
 
 ## 10. Pendientes
 
 - Viento (§9), 2026-09-24: sale de la vista por grupo. En la vista por variable: rosas día/noche por zona (Mina, Sur, Altiplano; `rose_maps.py`) y, por grupo de viento, serie horaria y ciclo diario de velocidad. Se probaron y retiraron el ciclo de dirección, la constancia diaria y el mapa hora × día: saturaban sin aportar. Los grupos de viento separan además por forma del ciclo de velocidad (`grouping.MAX_DIF_CICLO_VEL`), que saca a Camp_Quellaveco.
-- Camp_Quellaveco: el anemómetro se calibró el 2026-09-10 (dato del usuario). Desde ese día aparecen horas en 0.00 exacto (antes 0 %, después 8–50 % de las horas en la mayoría de los días) y la razón día/vecinas baja de ~1.4 a ~1.05. Preguntar qué se hizo.
+- Camp_Quellaveco: el anemómetro se calibró el 2026-09-10 (dato del usuario). Desde ese día aparecen horas en 0.00 exacto (antes 0 %, después 8–50 % de las horas en la mayoría de los días) y la razón día/vecinas baja de ~1.4 a ~1.05. Diagnóstico nocturno en §8 (sensor que no arranca). Preguntar qué se hizo (rodamientos, hélice u offset del programa) y qué modelo de sensor tiene la torre.
 - Curar `groups_draft.py` → `groups.py`.
 - Regla de QC para escalones de nivel en T y HR (caso Camp_Quellaveco), comparando con vecinas.
 - Confirmar con partes de campo los casos de §8 y la coordenada de Campamento Quellaveco.
 - Radiación solar: en pausa por decisión del usuario (2026-09-24); se sigue bien sin el visor.
 - Lluvia y UV: exploradas (§11); falta decidir figuras y QC antes de llevarlas al visor. Para los descartes de lluvia, esperar el historial de intervenciones.
-- Sarallenque: medir con brújula la marca de norte del WindSonic, conseguir la fecha y la ubicación anterior del traslado de julio de 2025 y, con eso, añadir una corrección de dirección por tramos en `stations.py` (como `BARO_OFFSET`).
+- Sarallenque (§9, visita del 2026-09-25): (1) dejar `WIND_EXCLUDED` en `("2025-07-14", "2026-09-25 20:00")` para que vuelva a agruparse al juntar 60 días; (2) hacia el 2026-10-09, con 2 semanas, repetir la comparación con MQG (dirección y velocidad por franja) para ver si queda un giro residual y si la velocidad nocturna sigue en ~0.4 × MQG (cara este cubierta); (3) decidir si se añade en `stations.py` la corrección de +180° para la noche de 2025-11-17 → 2026-09-25 10:00; (4) identificar qué tapaba la cara sur y la ubicación anterior a julio de 2025.
+- Mina_Norte: añadida a mano a los grupos de T, HR y combinado (§5). Hacia el 2026-10-27 (60 días válidos) regenerar con `grouping.py` y comprobar que entra sola.
+- Apacheta: presión con 706 h `STUCK` en 2026-08-29 → 09-28 (§8); revisar desde cuándo y preguntar en campo.
 
 ---
 
@@ -467,7 +550,7 @@ Pendiente: cruzar con el historial de intervenciones (volcados de prueba = falso
 
 ### Intervenciones frente a los datos de lluvia (2026-09-24)
 
-Fuentes del usuario, en la raíz del workspace: `intervenciones_meteorologia.csv` (154 visitas,
+Fuentes del usuario, en `references/`: `intervenciones_meteorologia.csv` (154 visitas,
 2026-01-31 → 2026-09-23) y `observaciones_precipitacion.csv` (4 casos). Correspondencia de nombres:
 DPB-1 = Dique_pie_botadero, PCHAP_1 = Chancado_primario, Mina_Sur1 = Minas_Sur, PMC-4 = PMC-4_met y
 EHA-TIT-1 = Titire (su resolución pasa de 0.017 a 0.1 mm el 2026-02-11, el día en que el parte

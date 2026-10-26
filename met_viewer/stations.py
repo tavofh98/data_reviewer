@@ -1,7 +1,7 @@
 """Metadato de las estaciones meteorológicas: ubicación, altitud y sensores.
 
 Fuentes:
-- Coordenadas: `Estaciones AAQ.kmz` (raíz del workspace), convertidas a UTM 19S (EPSG:32719),
+- Coordenadas: `references/Estaciones AAQ.kmz`, convertidas a UTM 19S (EPSG:32719),
   salvo donde un comentario diga que vienen de campo (cartel o GPS), que mandan sobre el KMZ.
   Las de `control_calidad_aaq/config.py` están desplazadas entre 8 y 69 km: no usarlas.
   Una altitud de GPS no entra sin saber su datum: si difiere de `z_baro` en ~40 m es
@@ -24,7 +24,7 @@ ROOT = Path(__file__).resolve().parent
 DB_PATH = ROOT.parents[2] / "database_duck" / "anglo_ambiental.db"
 
 # Variables que se reportan: la norma vive en anglo_reporte/matrices.py (sin dependencias).
-_spec = importlib.util.spec_from_file_location("_matrices", ROOT.parent / "anglo_reporte" / "matrices.py")
+_spec = importlib.util.spec_from_file_location("_matrices", ROOT.parents[2] / "anglo_reporte" / "matrices.py")
 _mod = importlib.util.module_from_spec(_spec)  # type: ignore[arg-type]
 _spec.loader.exec_module(_mod)  # type: ignore[union-attr]
 REPORTED: dict[str, list[str]] = _mod.VARIABLES_REPORTE["meteorologia"]

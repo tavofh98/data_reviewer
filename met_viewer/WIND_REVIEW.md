@@ -143,6 +143,36 @@ del cambio (en Sarallenque: 2025-05-01 → 2025-06-30 y 2025-11-17 → 2026-01-0
 6. **Velocidad por hora relativa a la vecina de control**, antes y después, para separar el efecto
    del obstáculo del de la estación.
 
+### G. Calma real o sensor parado (viento flojo, sensores mecánicos)
+
+Sirve cuando cambia el aspecto de la serie **de noche** (más ceros, menos o más variación de la
+dirección) y hay que decidir qué tramo es más válido. Se trabaja con datos **sin QC** y hora a hora,
+con la vecina más cercana como control. No hace falta un tramo limpio largo: bastan 2–3 semanas a
+cada lado del cambio y el mismo periodo del año anterior como referencia de lo normal.
+
+1. **Noches concretas, hora a hora, junto a la vecina más cercana.** Una calma real se ve también en
+   la vecina (velocidad baja y dirección errática). Si la estación marca 0.00 durante horas mientras
+   la vecina a < 1 km sopla 1–2 m/s constante, la calma es falsa.
+2. **Dirección durante la calma.** Una veleta que se detiene queda donde la dejó la última brisa: la
+   dirección horaria se repite con décimas de grado durante toda la noche y el ángulo cambia de una
+   noche a otra. Sensor parado, no dato. El QC no lo atrapa: `STUCK` exime las calmas de < 24 h.
+3. **Velocidad esperada.** Razón nocturna estación / vecina en el periodo anterior (p. ej. 0.4) por
+   la velocidad de la vecina esa noche. Si lo esperado es 0.5–1 m/s y se registra 0.00, el sensor
+   no arranca.
+4. **Variabilidad nocturna, en tres medidas por periodo:** desviación circular de la dirección,
+   mediana del cambio de una hora a la siguiente y % de horas en 0.00 exacto. Referencia: la vecina
+   (~20° de cambio horario de noche en la zona de la mina). **Más variación no es mejor:** el
+   doble de cambio horario que la vecina es ruido de un sensor en su umbral, no viento.
+5. **Dirección según la velocidad** (clases 0, 0–0.3, 0.3–0.5, 0.5–1, 1–2, > 2 m/s): mediana y
+   dispersión. Si con < 0.5 m/s la estación apunta a un sector distinto del drenaje de las vecinas,
+   esas horas no llevan información de dirección.
+6. **Parecido hora a hora con cada vecina**, solo con horas en que las dos superan 0.5 m/s: mediana
+   de la diferencia angular y % de horas a < 45°. Se compara con el **mismo periodo del año
+   anterior**, que dice si la estación ya se había degradado antes del cambio.
+
+Lectura: el tramo válido es el que se parece a la vecina y al año anterior, no el que tiene más o
+menos variación. Si ninguno se parece, solo sirven las horas con ≥ 0.5 m/s, en ambos tramos.
+
 ---
 
 ## 5. Cómo interpretar la combinación
@@ -155,6 +185,8 @@ del cambio (en Sarallenque: 2025-05-01 → 2025-06-30 y 2025-11-17 → 2026-01-0
 | Solo cambia la velocidad (C), la dirección no | **Altura, exposición o sensor** | Comparar solo la forma del ciclo, no el nivel, hasta confirmarlo en campo |
 | Dirección fija (D) con viento | **Veleta mecánica pegada** | Excluir el tramo |
 | Error constante frente a la ladera y a las vecinas (A), sin fecha | **Orientación mal desde la instalación** | Confirmar con brújula; corregir si es un ángulo fijo |
+| Velocidad 0.00 durante horas con la vecina cercana soplando, y dirección congelada con décimas de grado (G) | **Sensor que no arranca** (rozamiento, umbral de arranque o programa) | Esas horas no son dato; preguntar qué se hizo en la última intervención |
+| De noche, cambio horario de la dirección el doble que la vecina y sector distinto con < 0.5 m/s (G) | **Sensor en su umbral: ruido** | Usar solo horas con ≥ 0.5 m/s |
 
 **Lo que los datos no pueden cerrar solos.** Si además del giro cambió la exposición, el ángulo
 exacto queda con ±10–30° de incertidumbre. Lo cierra una lectura con brújula de la marca de norte
@@ -173,9 +205,27 @@ orientadas: una mirando al norte y otra al sur, con fecha y GPS.
 | F noche | giro de **180° (±10°)**: similitud 0.98 con el giro y 0.01 sin él; hora a hora de 172° a 184° |
 | F día | tras restar 180°, el día viene de ~299° contra ~247° antes (las vecinas: ±20°); el sector S–SO–O (165–285°) pasa del 39 % de las horas a 0 %, y el de 300° del 0.4 % al 52 % |
 | Conclusión | giro de 180° del shelter con el sensor + un obstáculo al S–SO–O en el nuevo punto |
+| Confirmación (2026-09-25) | en campo, marca N hacia el sur: giro confirmado. Al reorientar y desplazar el shelter unos metros al E, el día vuelve al SSO: el obstáculo era local, pegado a la cara sur (FINDINGS.md §9, «visita del 2026-09-25») |
 
 Detalle e hipótesis: FINDINGS.md §9. Reporte con mapa y rosas:
 `sarallenque_wind/reporte_viento_sarallenque.html`.
+
+### Caso de validación de G: Camp_Quellaveco tras la calibración del 2026-09-10
+
+Periodos: 2026-08-10 → 09-09 (antes), 2026-09-10 → 09-25 (después) y 2025-08-10 → 09-25
+(referencia); noche 20–06 h; control Chancado_primario (0.7 km).
+
+| Paso | Antes | Después | Referencia 2025 |
+|---|---|---|---|
+| 1. Noches hora a hora | — | 14→15 sep: 0.00 m/s de 21 a 07 h con Chancado en 1.3–2.3 m/s del NE | — |
+| 2. Dirección en calma | varía (31–42° de dispersión con 0–0.3 m/s) | 94.6–95.1° toda la noche; 66.2° y 87.4° en otras noches | — |
+| 3. Velocidad esperada | razón nocturna ~0.4 de Chancado | con Chancado a 1.3–2.3 m/s, se esperaban 0.5–0.9 m/s | — |
+| 4. Cambio horario / % en 0.00 | 43° / 0 % (Chancado: 20°) | 4.6° / 37 % | 37° / 0 % |
+| 5. Sector con < 0.5 m/s | mediana 205–245° (las vecinas, del NE–E) | congelado en ~91° | 198–219° |
+| 6. Dif. con Chancado (% < 45°) | 54° (37 %) | 49° (41 %, solo 44 h) | 36° (59 %) |
+
+Conclusión: después, sensor que no arranca; antes, ruido de un sensor en su umbral y ya peor que en
+2025. De noche solo valen las horas con ≥ 0.5 m/s en los dos tramos; de día, ambos.
 
 ---
 
@@ -184,5 +234,5 @@ Detalle e hipótesis: FINDINGS.md §9. Reporte con mapa y rosas:
 - `sarallenque_wind/build_report.py`: rosas de día y de noche antes y después, en un mapa con el
   relieve; series semanales; tabla de relieve con el DEM. Reutilizable para otra estación
   cambiando `TARGET`, `REFERENCES`, `CHANGE` y `PERIODS`.
-- Los criterios A–D y E–F se calcularon con scripts de exploración que no están en el proyecto.
+- Los criterios A–D y E–G se calcularon con scripts de exploración que no están en el proyecto.
   Este documento da lo necesario para reproducirlos.

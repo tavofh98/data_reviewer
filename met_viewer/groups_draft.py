@@ -118,6 +118,15 @@ GROUPS_COMBINED: un solo agrupamiento para todas las variables (distancia combin
 # G6 (3), r medio 0.86: Camp_Quellaveco, Chancado_primario, Dique_pie_botadero
 # G7 (3), r medio 0.86: Dique_pie_botadero, Minas_Sur, Tala-1
 # G8 (3), r medio 0.91: Huachunta, Titire, Vizcachas
+#
+# == Añadido a mano: Mina_Norte (2026-09-28)
+# T/HR/P válidas solo desde 2026-08-28 18:00 (antes, registros en cero: ZERO_RECORD); no llega a
+# los 60 días de grouping.py. Correlación de anomalías 2026-08-28 18:00 → 2026-09-28 12:00 (~30 días),
+# ubicada con la misma regla que cortar(): grupo de la más correlacionada o, si está lleno, trío.
+# AirTC_Avg  Planta_Concentradora r=0.92; Papujune 0.88; Minas_Sur 0.88 -> G1 lleno: trío nuevo
+# RH_Avg     Charaque r=0.95; Altarani 0.94; Minas_Sur 0.94 -> G1 lleno: trío nuevo
+# combinado  Planta_Concentradora 0.92; Minas_Sur 0.91; Altarani 0.90 -> se une a G5
+# Al regenerar este borrador con grouping.py esta adición se pierde: repetirla hasta que tenga 60 días.
 
 GROUPS: dict[str, list[list[str]]] = {
     'AirTC_Avg': [
@@ -128,6 +137,7 @@ GROUPS: dict[str, list[list[str]]] = {
         ['Dique_pie_botadero', 'Minas_Sur', 'Tala-1'],
         ['Huachunta', 'Titire', 'Vizcachas'],
         ['Calacaja', 'DME3_Cortadera'],
+        ['Mina_Norte', 'Papujune', 'Planta_Concentradora'],   # a mano
         ['Ilo'],
     ],
     'RH_Avg': [
@@ -137,6 +147,7 @@ GROUPS: dict[str, list[list[str]]] = {
         ['Apacheta', 'Cerro_Salviani', 'Papujune', 'Planta_Concentradora'],
         ['Camp_Quellaveco', 'Chancado_primario', 'Dique_pie_botadero'],
         ['Huachunta', 'Titire', 'Vizcachas'],
+        ['Altarani', 'Charaque', 'Mina_Norte'],   # a mano
         ['Ilo'],
     ],
     'WS_ms_Avg': [
@@ -159,7 +170,7 @@ GROUPS_COMBINED: list[list[str]] = [
     ['Calacaja', 'Calientes1', 'Chalsos', 'Cortadera', 'DME3_Cortadera'],
     ['Alto_Quellaveco', 'Minas_Sur', 'Sarallenque_MQG-15-02'],
     ['Alto_Tala', 'Cerro_Salviani', 'Papujune'],
-    ['Apacheta', 'Papujune', 'Planta_Concentradora'],
+    ['Apacheta', 'Mina_Norte', 'Papujune', 'Planta_Concentradora'],   # Mina_Norte a mano
     ['Camp_Quellaveco', 'Chancado_primario', 'Dique_pie_botadero'],
     ['Dique_pie_botadero', 'Minas_Sur', 'Tala-1'],
     ['Huachunta', 'Titire', 'Vizcachas'],
