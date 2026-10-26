@@ -1,0 +1,516 @@
+<title>Mezclas del Norte</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Concepto: cuaderno de instrumentista. Columna de lectura estrecha; cada idea es un instrumento interactivo
+   (rosa, recta 0–360, serie de 5 min) con los mismos tres colores: verdad (tinta), A (ámbar), μ (verde azulado). */
+:root {
+  --bg: #f3f5f7;
+  --panel: #ffffff;
+  --ink: #18222d;
+  --muted: #5b6876;
+  --rule: #d6dde4;
+  --amber: #b86a00;      /* H0: el promedio A tal cual */
+  --teal: #0f7f86;       /* H1: μ de la rama de mezcla */
+  --red: #b3342b;        /* error */
+  --grid: #e6ebf0;
+  --f-display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --f-body: "Atkinson Hyperlegible", "Segoe UI", sans-serif;
+  --f-mono: "JetBrains Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11171d; --panel: #18212a; --ink: #e5ebf0; --muted: #98a6b3; --rule: #2c3945;
+    --amber: #f0a33a; --teal: #46c3c9; --red: #ef6b5f; --grid: #22303b; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11171d; --panel: #18212a; --ink: #e5ebf0; --muted: #98a6b3; --rule: #2c3945;
+  --amber: #f0a33a; --teal: #46c3c9; --red: #ef6b5f; --grid: #22303b; color-scheme: dark;
+}
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 16px; line-height: 1.55; }
+.wrap { max-width: 920px; margin: 0 auto; padding-block: 32px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 40px; }
+header { display: flex; flex-direction: column; gap: 10px; }
+.eyebrow { font-family: var(--f-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--f-display); font-weight: 700; font-size: clamp(40px, 7vw, 64px); line-height: .95; margin: 0; text-wrap: balance; }
+h2 { font-family: var(--f-display); font-weight: 600; font-size: 30px; line-height: 1.05; margin: 0; text-wrap: balance; }
+h3 { font-family: var(--f-display); font-weight: 600; font-size: 20px; margin: 0; }
+p { margin: 0; max-width: 66ch; }
+.lead { font-size: 18px; color: var(--muted); }
+section { display: flex; flex-direction: column; gap: 14px; }
+.step { font-family: var(--f-mono); font-size: 12px; color: var(--teal); letter-spacing: .06em; }
+.panel { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+.cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 16px; align-items: start; }
+@media (max-width: 720px) { .cols { grid-template-columns: minmax(0, 1fr); } }
+.controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px 20px; }
+label { display: flex; flex-direction: column; gap: 4px; font-size: 14px; color: var(--muted); }
+label b { font-family: var(--f-mono); font-weight: 600; color: var(--ink); }
+input[type=range] { width: 100%; accent-color: var(--teal); }
+input[type=range]:focus-visible, button:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+button { font: 600 14px var(--f-body); color: var(--ink); background: transparent; border: 1px solid var(--rule); border-radius: 4px; padding: 6px 12px; cursor: pointer; justify-self: start; }
+button:hover { border-color: var(--teal); color: var(--teal); }
+svg { display: block; width: 100%; height: auto; }
+svg text { font-family: var(--f-mono); font-size: 11px; fill: var(--muted); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--muted); }
+.legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; background: var(--c); }
+.readout { font-family: var(--f-mono); font-size: 13px; display: grid; grid-template-columns: auto 1fr; gap: 2px 14px; }
+.readout dt { color: var(--muted); } .readout dd { margin: 0; font-variant-numeric: tabular-nums; }
+.note { font-size: 14px; color: var(--muted); border-left: 2px solid var(--rule); padding-left: 12px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font-family: var(--f-mono); font-size: 12px; border: 1px solid var(--rule); border-radius: 3px; padding: 4px 8px; font-variant-numeric: tabular-nums; }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; font-size: 14px; min-width: 520px; width: 100%; font-variant-numeric: tabular-nums; }
+th, td { text-align: right; padding: 6px 10px; border-bottom: 1px solid var(--rule); }
+th:first-child, td:first-child { text-align: left; }
+th { font-family: var(--f-mono); font-weight: 600; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+td.best { color: var(--teal); font-weight: 700; }
+td.bad { color: var(--red); }
+.pipeline { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 720px) { .pipeline { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.pipeline div { border-top: 3px solid var(--teal); padding-top: 8px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.pipeline .kind { font-family: var(--f-mono); font-size: 11px; color: var(--muted); text-transform: uppercase; }
+.pipeline .box { border-top-color: var(--amber); }
+footer { font-size: 13px; color: var(--muted); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">Estudio de dirección del viento · registros de 5 min</div>
+  <h1>Mezclas del norte</h1>
+  <p class="lead">Por qué el promedio de la veleta falla cuando el viento viene del norte, cómo se reconoce el error y cuánto lo corrige cada modelo.</p>
+</header>
+
+<!-- 1. La física -->
+<section>
+  <div class="step">1 · LA FÍSICA</div>
+  <h2>El promedio aritmético no sabe que 359° y 1° son vecinos</h2>
+  <p>El logger toma 60 lecturas en 5 minutos (una cada 5 s) y guarda su media aritmética en <code>WindDir_Avg</code>. Lejos del norte eso da la dirección correcta. Si las lecturas caen a los dos lados de 0°, unas valen ~350 y otras ~10, y la media sale ~180: el lado opuesto de la rosa.</p>
+  <div class="panel">
+    <div class="controls">
+      <label for="s1mu">Dirección real μ <b id="s1muv"></b><input id="s1mu" type="range" min="-120" max="120" step="1" value="8"></label>
+      <label for="s1sg">Dispersión σ dentro de los 5 min <b id="s1sgv"></b><input id="s1sg" type="range" min="2" max="60" step="1" value="15"></label>
+    </div>
+    <div class="cols">
+      <svg id="s1rose" viewBox="0 0 260 260" role="img" aria-label="Rosa con las 60 lecturas, la dirección real y el promedio aritmético"></svg>
+      <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+        <svg id="s1line" viewBox="0 0 520 90" role="img" aria-label="Las 60 lecturas sobre la recta de 0 a 360 grados"></svg>
+        <svg id="s1curve" viewBox="0 0 520 220" role="img" aria-label="Curva del promedio esperado frente a la dirección real"></svg>
+      </div>
+    </div>
+    <div class="legend"><span style="--c:var(--ink)">dirección real (lo que mide D1)</span><span style="--c:var(--amber)">promedio aritmético A (lo que guarda WindDir_Avg)</span><span style="--c:var(--grid)">lecturas de 5 s</span></div>
+    <p class="note">Abajo a la derecha está la curva A = g(μ, σ). Fuera de ±3σ del norte coincide con la diagonal (A = μ). Dentro, cae de 360 a 0 en una pendiente: la <b>rama de mezcla</b>. Cuanto mayor es σ, más ancha es la zona afectada.</p>
+  </div>
+</section>
+
+<!-- 2. La ambigüedad -->
+<section>
+  <div class="step">2 · DOS EXPLICACIONES PARA CADA PROMEDIO</div>
+  <h2>Un mismo A puede venir de dos vientos distintos</h2>
+  <p>Al revés, viendo solo A: o el viento venía de A (hipótesis H0), o venía del norte y A es una mezcla (H1). Si se conoce σ, la rama de mezcla dice de qué μ vendría. El modelo no corrige la dirección: solo elige entre esos dos candidatos.</p>
+  <div class="panel">
+    <div class="controls">
+      <label for="s2a">Promedio leído A <b id="s2av"></b><input id="s2a" type="range" min="0" max="359" step="1" value="240"></label>
+      <label for="s2sg">σ <b id="s2sgv"></b><input id="s2sg" type="range" min="2" max="60" step="1" value="20"></label>
+    </div>
+    <div class="cols">
+      <svg id="s2rose" viewBox="0 0 260 260" role="img" aria-label="Los dos candidatos para un mismo promedio"></svg>
+      <div style="display:flex;flex-direction:column;gap:12px;min-width:0">
+        <dl class="readout" id="s2out"></dl>
+        <p class="note">Con A = 240° y σ = 20°, H1 dice «viento del norte a ~350°». Un viento real del oeste a 240° deja exactamente el mismo registro. Este es el límite físico: con un solo registro no se distinguen. La diferencia está en el contexto: una mezcla salta mucho entre registros (unos grados de cambio en μ mueven A decenas de grados) y sus vecinos suelen estar cerca del norte.</p>
+      </div>
+    </div>
+    <div class="legend"><span style="--c:var(--amber)">H0: la dirección es A</span><span style="--c:var(--teal)">H1: la dirección es μ (mezcla)</span></div>
+  </div>
+</section>
+
+<!-- 3. Un episodio -->
+<section>
+  <div class="step">3 · UN EPISODIO SIMULADO</div>
+  <h2>Tres horas cruzando el norte, registro a registro</h2>
+  <p>Simulación con la misma física: el viento llega del NE, pasa una hora oscilando alrededor del norte y gira al oeste. Cada punto ámbar es un <code>WindDir_Avg</code> de 5 min. El eje vertical está centrado en el norte para que las mezclas se vean como saltos hacia los bordes.</p>
+  <div class="panel">
+    <div class="controls">
+      <label for="s3sg">Turbulencia (σ de las lecturas de 5 s) <b id="s3sgv"></b><input id="s3sg" type="range" min="3" max="40" step="1" value="14"></label>
+      <button id="s3new" type="button">Otro episodio</button>
+    </div>
+    <svg id="s3ts" viewBox="0 0 860 300" role="img" aria-label="Serie de 5 minutos con el promedio, la dirección real y las mezclas"></svg>
+    <div class="legend"><span style="--c:var(--ink)">dirección real de cada 5 min (D1)</span><span style="--c:var(--amber)">promedio A</span><span style="--c:var(--teal)">μ en los registros que son mezcla (H1)</span></div>
+    <div class="chips" id="s3hours"></div>
+    <p class="note">V1 promedia los 12 A de cada hora como vectores: hereda los saltos. El oráculo usa μ en los registros marcados y A en el resto. El modelo real tiene que adivinar esas marcas sin ver D1, con los saltos, los vecinos cerca del norte, la racha y la hora.</p>
+  </div>
+</section>
+
+<!-- 4. El modelo -->
+<section>
+  <div class="step">4 · CÓMO DECIDE EL MODELO</div>
+  <h2>Cuatro pasos, y solo uno es caja negra</h2>
+  <div class="pipeline">
+    <div><span class="kind">analítico</span><h3>σ por la racha</h3><p>log σ = a + b·log(G − 1) + c·log v, con G = racha / velocidad. Tres parámetros.</p></div>
+    <div><span class="kind">analítico</span><h3>Candidato μ</h3><p>Se invierte la rama de mezcla g(μ, σ) = A. No hay nada que ajustar.</p></div>
+    <div class="box"><span class="kind">caja negra</span><h3>P(mezcla)</h3><p>Dos etapas de gradient boosting: rasgos del registro y de sus vecinos, y luego la misma probabilidad suavizada en ±15, ±30 y ±60 min.</p></div>
+    <div><span class="kind">analítico</span><h3>Suma blanda</h3><p>Cada registro entra en la hora como P·u(μ) + (1 − P)·u(A). La duda pesa poco porque los dos vectores se cancelan.</p></div>
+  </div>
+  <div class="panel">
+    <div class="controls">
+      <label for="s4p">Probabilidad de mezcla P <b id="s4pv"></b><input id="s4p" type="range" min="0" max="1" step="0.01" value="0.6"></label>
+      <label for="s4a">A <b id="s4av"></b><input id="s4a" type="range" min="0" max="359" step="1" value="200"></label>
+    </div>
+    <div class="cols">
+      <svg id="s4rose" viewBox="0 0 260 260" role="img" aria-label="Suma blanda de los dos candidatos"></svg>
+      <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+        <dl class="readout" id="s4out"></dl>
+        <p class="note">Si P = 0.5 y los candidatos son opuestos, el vector del registro es casi nulo y apenas pesa en la hora: el registro dudoso se «abstiene» en lugar de arrastrar la dirección horaria. Por eso la suma blanda gana a decidir con un umbral.</p>
+      </div>
+    </div>
+  </div>
+  <p>La regresión logística, versión legible de la tercera caja, falla porque la decisión depende de combinaciones: un salto grande solo indica mezcla si los vecinos están cerca del norte. Un modelo lineal no puede expresar ese «solo si». La σ, en cambio, sí admite una ley física.</p>
+  <div class="panel">
+    <h3>Ley de racha en las 6 estaciones</h3>
+    <svg id="s4gust" viewBox="0 0 520 260" role="img" aria-label="Medianas de exceso de racha y SD1 por estación"></svg>
+    <p class="note">Cada punto es la mediana de una estación en el último año. La línea es SD1 = 26·(G − 1), la pendiente típica de cinco estaciones (24–27). Minas Sur se sale: con la misma racha tiene el doble de σ.</p>
+  </div>
+</section>
+
+<!-- 5. Agrupar -->
+<section>
+  <div class="step">5 · ¿AGRUPAR POR UBICACIÓN?</div>
+  <h2>Dos estaciones a 800 m no se parecen</h2>
+  <div class="cols">
+    <svg id="s5map" viewBox="0 0 320 340" role="img" aria-label="Posición relativa de las estaciones y su dispersión con viento del norte"></svg>
+    <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+      <p>El tamaño del círculo es la SD1 mediana con viento del norte. Alto Quellaveco y Minas Sur están a 0.8 km y a la misma cota (4 139 y 4 119 m), pero Minas Sur tiene el doble de dispersión y su dirección horaria difiere de la de su vecina en una mediana de 34°. El desfase deriva de −51° (abril) a +66° (octubre), y en julio su anemómetro se desmontó para el banco angular.</p>
+      <p class="note">Lo que separa a las estaciones es el sensor y su régimen, no la geografía. Por eso el protocolo compara un modelo por estación, uno global y uno que nunca vio la estación, en lugar de grupos por zona.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 6. Resultados -->
+<section>
+  <div class="step">6 · RESULTADOS EN PRUEBA</div>
+  <h2>De 34° a 10° de error con viento del norte</h2>
+  <p>Semanas de prueba que ningún modelo vio. Error medio horario frente al Θ1 del logger, en grados; media de las 6 estaciones (cada una pesa igual).</p>
+  <div class="panel">
+    <svg id="s6ladder" viewBox="0 0 860 330" role="img" aria-label="Error con viento del norte por método"></svg>
+    <p class="note">«Sin D1» es el caso real: el modelo nunca vio esa estación. «Elección perfecta» usa la σ estimada pero acierta siempre la mezcla: casi iguala al oráculo, así que lo que queda de error es de clasificación, no de σ.</p>
+  </div>
+  <div class="panel">
+    <h3>Por estación, viento del norte (real ≤ 45°)</h3>
+    <svg id="s6st" viewBox="0 0 860 280" role="img" aria-label="Error con viento del norte por estación"></svg>
+    <div class="legend"><span style="--c:var(--red)">V1</span><span style="--c:var(--teal)">modelo sin D1 de la estación</span><span style="--c:var(--ink)">oráculo</span></div>
+  </div>
+  <div class="panel">
+    <h3>Intentos de no tocar el viento del sur (validación)</h3>
+    <div class="scroll"><table>
+      <thead><tr><th>variante</th><th>todas</th><th>norte</th><th>sur 90–270°</th></tr></thead>
+      <tbody>
+        <tr><td>sin puerta</td><td class="best">4.91</td><td class="best">10.1</td><td>2.62</td></tr>
+        <tr><td>P &lt; 0.25 pasa a 0</td><td>5.15</td><td>11.1</td><td class="best">2.47</td></tr>
+        <tr><td>solo si hay un A cerca del norte en ±30 min</td><td class="bad">8.26</td><td class="bad">23.8</td><td>2.65</td></tr>
+        <tr><td>V1, sin corrección</td><td>11.20</td><td>34.6</td><td>2.58</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">La puerta de contexto descarta los peores casos: con viento puro del norte todos los A valen ~180°, así que nunca hay un A cerca del norte (vuelva a la sección 1 con μ = 0). El umbral solo cambia sur por norte. El pequeño daño en el sur es el precio de la ambigüedad de la sección 2.</p>
+  </div>
+</section>
+
+<footer>Datos: tablas de 5 y 60 min del logger, último año (Minas Sur: 6 meses). Cifras de wind_vector/protocol.py y protocol_report.py; las secciones 1–4 son simulaciones con la misma física.</footer>
+</div>
+
+<script>
+(() => {
+  const NS = "http://www.w3.org/2000/svg";
+  const $ = (id) => document.getElementById(id);
+  const mk = (tag, attrs = {}, parent) => {
+    const e = document.createElementNS(NS, tag);
+    for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+    if (parent) parent.appendChild(e);
+    return e;
+  };
+  const txt = (parent, x, y, s, attrs = {}) => { const t = mk("text", { x, y, ...attrs }, parent); t.textContent = s; return t; };
+  const mod = (x) => ((x % 360) + 360) % 360;
+  const rad = (d) => d * Math.PI / 180;
+  const deg = (r) => r * 180 / Math.PI;
+  const cdiff = (a, b) => Math.abs(((a - b + 540) % 360) - 180);
+  const fmt = (d) => `${Math.round(mod(d))}°`;
+
+  // Generador con semilla (reproducible) y normal por Box-Muller.
+  const rng = (seed) => () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  const normal = (r) => Math.sqrt(-2 * Math.log(1 - r())) * Math.cos(2 * Math.PI * r());
+
+  // g(μ, σ) = E[(μ + σZ) mod 360], por cuadratura sobre Z.
+  const ZG = Array.from({ length: 401 }, (_, i) => -5 + i * 0.025);
+  const WG = (() => { const w = ZG.map((z) => Math.exp(-z * z / 2)); const s = w.reduce((a, b) => a + b); return w.map((x) => x / s); })();
+  const g = (mu, s) => { let a = 0; for (let i = 0; i < ZG.length; i++) a += WG[i] * mod(mu + s * ZG[i]); return a; };
+  const branchCache = new Map();
+  const branch = (s) => {
+    s = Math.round(s);
+    if (branchCache.has(s)) return branchCache.get(s);
+    const mus = [], gs = [];
+    for (let m = -180; m <= 180; m += 0.5) { mus.push(m); gs.push(g(m, s)); }
+    let i0 = 0, i1 = mus.length - 1, best = -1, worst = 999;
+    mus.forEach((m, i) => { if (m <= 0 && gs[i] > best) { best = gs[i]; i0 = i; } if (m > 0 && gs[i] < worst) { worst = gs[i]; i1 = i; } });
+    const b = { mu: mus.slice(i0, i1 + 1), g: gs.slice(i0, i1 + 1) };   // g decreciente
+    branchCache.set(s, b);
+    return b;
+  };
+  const mixMu = (a, s) => {   // μ de la rama con g(μ, σ) = A
+    const b = branch(s);
+    if (a >= b.g[0]) return mod(b.mu[0]);
+    for (let i = 1; i < b.g.length; i++) if (b.g[i] <= a) {
+      const f = (b.g[i - 1] - a) / (b.g[i - 1] - b.g[i]);
+      return mod(b.mu[i - 1] + f * (b.mu[i] - b.mu[i - 1]));
+    }
+    return mod(b.mu[b.mu.length - 1]);
+  };
+  const vmean = (angles, w) => { let x = 0, y = 0; angles.forEach((a, i) => { const k = w ? w[i] : 1; x += k * Math.cos(rad(a)); y += k * Math.sin(rad(a)); });
+    return { dir: mod(deg(Math.atan2(y, x))), r: Math.hypot(x, y) / (w ? w.reduce((p, q) => p + q, 0) || 1 : angles.length) }; };
+
+  // Rosa: dirección meteorológica, 0° arriba y sentido horario.
+  const rose = (svg) => {
+    svg.innerHTML = "";
+    const c = 130, R = 100;
+    mk("circle", { cx: c, cy: c, r: R, fill: "none", stroke: "var(--rule)" }, svg);
+    for (let d = 0; d < 360; d += 30) {
+      const big = d % 90 === 0;
+      mk("line", { x1: c + (R - (big ? 8 : 4)) * Math.sin(rad(d)), y1: c - (R - (big ? 8 : 4)) * Math.cos(rad(d)),
+        x2: c + R * Math.sin(rad(d)), y2: c - R * Math.cos(rad(d)), stroke: "var(--rule)" }, svg);
+    }
+    [["N", 0], ["E", 90], ["S", 180], ["O", 270]].forEach(([l, d]) =>
+      txt(svg, c + (R + 14) * Math.sin(rad(d)), c - (R + 14) * Math.cos(rad(d)) + 4, l, { "text-anchor": "middle", style: "font-weight:600;fill:var(--ink)" }));
+    const P = (d, r = R) => [c + r * Math.sin(rad(d)), c - r * Math.cos(rad(d))];
+    return {
+      dot: (d, color, r = 2.6, rr = R) => { const [x, y] = P(d, rr); return mk("circle", { cx: x, cy: y, r, fill: color }, svg); },
+      arrow: (d, color, len = 1, width = 3) => {
+        const [x, y] = P(d, R * len * 0.86);
+        mk("line", { x1: c, y1: c, x2: x, y2: y, stroke: color, "stroke-width": width, "stroke-linecap": "round" }, svg);
+        mk("circle", { cx: x, cy: y, r: width + 1.5, fill: color }, svg);
+      },
+    };
+  };
+
+  // ---------- 1 ----------
+  const Z60 = (() => { const r = rng(7); return Array.from({ length: 60 }, () => normal(r)); })();
+  function s1() {
+    const mu = +$("s1mu").value, s = +$("s1sg").value;
+    $("s1muv").textContent = fmt(mu); $("s1sgv").textContent = `${s}°`;
+    const samples = Z60.map((z) => mod(mu + s * z));
+    const A = samples.reduce((a, b) => a + b) / samples.length;
+    const ro = rose($("s1rose"));
+    samples.forEach((d) => ro.dot(d, "var(--muted)", 2.2, 92));
+    ro.arrow(mod(mu), "var(--ink)");
+    ro.arrow(A, "var(--amber)", 0.8);
+
+    const L = $("s1line"); L.innerHTML = "";
+    const x0 = 20, x1 = 500, X = (d) => x0 + (x1 - x0) * d / 360;
+    mk("line", { x1: x0, y1: 46, x2: x1, y2: 46, stroke: "var(--rule)" }, L);
+    [0, 90, 180, 270, 360].forEach((d) => { mk("line", { x1: X(d), y1: 42, x2: X(d), y2: 50, stroke: "var(--rule)" }, L); txt(L, X(d), 68, `${d}`, { "text-anchor": "middle" }); });
+    samples.forEach((d, i) => mk("circle", { cx: X(d), cy: 30 - (i % 4) * 5, r: 2.4, fill: "var(--muted)" }, L));
+    mk("line", { x1: X(A), y1: 10, x2: X(A), y2: 50, stroke: "var(--amber)", "stroke-width": 3 }, L);
+    txt(L, X(A), 86, `media aritmética A = ${A.toFixed(0)}°`, { "text-anchor": "middle", style: "fill:var(--amber);font-weight:600" });
+
+    const C = $("s1curve"); C.innerHTML = "";
+    const cx0 = 46, cx1 = 505, cy0 = 12, cy1 = 190;
+    const CX = (m) => cx0 + (cx1 - cx0) * (m + 120) / 240, CY = (a) => cy1 - (cy1 - cy0) * a / 360;
+    [0, 90, 180, 270, 360].forEach((a) => { mk("line", { x1: cx0, y1: CY(a), x2: cx1, y2: CY(a), stroke: "var(--grid)" }, C); txt(C, cx0 - 6, CY(a) + 4, `${a}`, { "text-anchor": "end" }); });
+    [-120, -60, 0, 60, 120].forEach((m) => txt(C, CX(m), cy1 + 16, fmt(m), { "text-anchor": "middle" }));
+    txt(C, (cx0 + cx1) / 2, 216, "dirección real μ", { "text-anchor": "middle" });
+    txt(C, cx0 + 4, cy0 + 10, "A esperado", {});
+    // Diagonal A = μ (sin mezcla), cortada en el norte donde 360 pasa a 0.
+    mk("path", { d: `M${CX(-120)},${CY(240)} L${CX(0)},${CY(360)} M${CX(0)},${CY(0)} L${CX(120)},${CY(120)}`,
+      fill: "none", stroke: "var(--muted)", "stroke-dasharray": "4 4" }, C);
+    let gp = "";
+    for (let m = -120; m <= 120; m += 1) gp += `${m === -120 ? "M" : "L"}${CX(m).toFixed(1)},${CY(g(m, s)).toFixed(1)} `;
+    mk("path", { d: gp, fill: "none", stroke: "var(--amber)", "stroke-width": 2.5 }, C);
+    mk("rect", { x: CX(-3 * s), y: cy0, width: CX(3 * s) - CX(-3 * s), height: cy1 - cy0, fill: "var(--amber)", opacity: 0.08 }, C);
+    txt(C, CX(0), cy0 + 10, "rama de mezcla (±3σ)", { "text-anchor": "middle", style: "fill:var(--amber)" });
+    mk("circle", { cx: CX(mu), cy: CY(g(mu, s)), r: 5, fill: "var(--amber)" }, C);
+  }
+
+  // ---------- 2 ----------
+  function s2() {
+    const a = +$("s2a").value, s = +$("s2sg").value;
+    $("s2av").textContent = `${a}°`; $("s2sgv").textContent = `${s}°`;
+    const mu = mixMu(a, s);
+    const ro = rose($("s2rose"));
+    ro.arrow(a, "var(--amber)");
+    ro.arrow(mu, "var(--teal)");
+    $("s2out").innerHTML = `<dt>H0</dt><dd>viento de ${fmt(a)}</dd><dt>H1</dt><dd>viento del norte a ${fmt(mu)}, mezclado</dd>
+      <dt>separación</dt><dd>${cdiff(a, mu).toFixed(0)}° entre candidatos</dd>`;
+  }
+
+  // ---------- 3 ----------
+  let seed3 = 3;
+  function s3() {
+    const sT = +$("s3sg").value; $("s3sgv").textContent = `${sT}°`;
+    const r = rng(seed3);
+    const N = 36, K = 60, total = N * K;
+    // Trayectoria de la dirección media: NE → oscila en el norte → gira al oeste, con un paseo aleatorio suave.
+    let walk = 0; const path = [];
+    for (let k = 0; k < total; k++) {
+      const t = k / total;
+      const base = t < 0.3 ? 55 - 50 * (t / 0.3) : t < 0.66 ? 5 - 14 * Math.sin((t - 0.3) / 0.36 * Math.PI * 2.2) : 5 - 95 * ((t - 0.66) / 0.34);
+      walk = 0.995 * walk + 0.7 * normal(r);
+      path.push(base + walk);
+    }
+    const recs = [];
+    for (let i = 0; i < N; i++) {
+      const smp = []; for (let k = 0; k < K; k++) smp.push(mod(path[i * K + k] + sT * normal(r)));
+      const A = smp.reduce((p, q) => p + q) / K;
+      const vm = vmean(smp);
+      const eps = Math.sqrt(Math.max(0, 1 - vm.r * vm.r));
+      const sd1 = deg(Math.asin(eps) * (1 + (2 / Math.sqrt(3) - 1) * eps ** 3));
+      const mu = mixMu(A, Math.min(120, Math.max(1, sd1)));
+      recs.push({ A, D1: vm.dir, mu, h1: cdiff(vm.dir, mu) < cdiff(vm.dir, A), smp });
+    }
+    const svg = $("s3ts"); svg.innerHTML = "";
+    const x0 = 48, x1 = 845, y0 = 14, y1 = 262;
+    const sgn = (d) => ((d + 180) % 360 + 360) % 360 - 180;    // −180..180, norte en 0
+    const X = (i) => x0 + (x1 - x0) * (i + 0.5) / N, Y = (d) => y0 + (y1 - y0) * (180 - sgn(d)) / 360;
+    [[180, "S"], [90, "E"], [0, "N"], [-90, "O"], [-180, "S"]].forEach(([d, l]) => {
+      const y = y0 + (y1 - y0) * (180 - d) / 360;
+      mk("line", { x1: x0, y1: y, x2: x1, y2: y, stroke: d === 0 ? "var(--rule)" : "var(--grid)" }, svg);
+      txt(svg, x0 - 8, y + 4, `${l} ${mod(d)}°`, { "text-anchor": "end" });
+    });
+    for (let h = 0; h <= 3; h++) { const x = x0 + (x1 - x0) * h / 3; mk("line", { x1: x, y1: y0, x2: x, y2: y1, stroke: "var(--grid)" }, svg); txt(svg, x, y1 + 18, `${h * 60} min`, { "text-anchor": "middle" }); }
+    let d = "";
+    recs.forEach((q, i) => {
+      const y = Y(q.D1);
+      const jump = i > 0 && Math.abs(sgn(q.D1) - sgn(recs[i - 1].D1)) > 180;
+      d += `${i === 0 || jump ? "M" : "L"}${X(i).toFixed(1)},${y.toFixed(1)} `;
+    });
+    mk("path", { d, fill: "none", stroke: "var(--ink)", "stroke-width": 2 }, svg);
+    recs.forEach((q, i) => {
+      if (q.h1) {
+        mk("line", { x1: X(i), y1: Y(q.A), x2: X(i), y2: Y(q.mu), stroke: "var(--teal)", "stroke-dasharray": "2 3", opacity: 0.7 }, svg);
+        mk("circle", { cx: X(i), cy: Y(q.mu), r: 4.5, fill: "none", stroke: "var(--teal)", "stroke-width": 2 }, svg);
+      }
+      mk("circle", { cx: X(i), cy: Y(q.A), r: 4, fill: "var(--amber)" }, svg);
+    });
+    const chips = $("s3hours"); chips.innerHTML = "";
+    for (let h = 0; h < 3; h++) {
+      const part = recs.slice(h * 12, h * 12 + 12);
+      const truth = vmean(part.flatMap((q) => q.smp)).dir;
+      const v1 = vmean(part.map((q) => q.A)).dir;
+      const orc = vmean(part.map((q) => (q.h1 ? q.mu : q.A))).dir;
+      const n1 = part.filter((q) => q.h1).length;
+      const c = document.createElement("span"); c.className = "chip";
+      c.textContent = `hora ${h + 1}: real ${fmt(truth)} · V1 error ${cdiff(v1, truth).toFixed(1)}° · oráculo ${cdiff(orc, truth).toFixed(1)}° · ${n1}/12 mezclas`;
+      chips.appendChild(c);
+    }
+  }
+
+  // ---------- 4 ----------
+  function s4() {
+    const p = +$("s4p").value, a = +$("s4a").value;
+    $("s4pv").textContent = p.toFixed(2); $("s4av").textContent = `${a}°`;
+    const mu = mixMu(a, 15);
+    const x = p * Math.cos(rad(mu)) + (1 - p) * Math.cos(rad(a)), y = p * Math.sin(rad(mu)) + (1 - p) * Math.sin(rad(a));
+    const len = Math.hypot(x, y), dir = mod(deg(Math.atan2(y, x)));
+    const ro = rose($("s4rose"));
+    ro.arrow(a, "var(--amber)", 1, 2);
+    ro.arrow(mu, "var(--teal)", 1, 2);
+    if (len > 0.02) ro.arrow(dir, "var(--ink)", len, 4);
+    $("s4out").innerHTML = `<dt>candidato A</dt><dd>${fmt(a)} (peso ${(1 - p).toFixed(2)})</dd><dt>candidato μ</dt><dd>${fmt(mu)} (peso ${p.toFixed(2)}, σ = 15°)</dd>
+      <dt>vector del registro</dt><dd>${fmt(dir)}, longitud ${len.toFixed(2)}</dd>`;
+  }
+
+  // Ley de racha: medianas reales del último año (protocolo, 5 min con viento > 0.5 m/s).
+  const ST = [
+    { n: "Cortadera", g: 0.34, sd: 10.77, e: 321591, N: 8099288, sdn: 10.1, pn: 6.7 },
+    { n: "Papujune", g: 0.49, sd: 14.43, e: 322640, N: 8106523, sdn: 4.0, pn: 28.4 },
+    { n: "Alto Quellaveco", g: 0.36, sd: 9.88, e: 328544, N: 8106357, sdn: 9.3, pn: 18.2 },
+    { n: "Tala-1", g: 0.29, sd: 9.29, e: 322943, N: 8108610, sdn: 7.3, pn: 7.8 },
+    { n: "Tala Legal", g: 0.38, sd: 10.83, e: 321308, N: 8108678, sdn: 13.3, pn: 4.9 },
+    { n: "Minas Sur", g: 0.46, sd: 18.73, e: 329299, N: 8106779, sdn: 19.6, pn: 19.6 },
+  ];
+  function gust() {
+    const svg = $("s4gust"); svg.innerHTML = "";
+    const x0 = 50, x1 = 500, y0 = 14, y1 = 220;
+    const X = (v) => x0 + (x1 - x0) * (v - 0.2) / 0.4, Y = (v) => y1 - (y1 - y0) * v / 24;
+    [0, 6, 12, 18, 24].forEach((v) => { mk("line", { x1: x0, y1: Y(v), x2: x1, y2: Y(v), stroke: "var(--grid)" }, svg); txt(svg, x0 - 6, Y(v) + 4, `${v}°`, { "text-anchor": "end" }); });
+    [0.2, 0.3, 0.4, 0.5, 0.6].forEach((v) => txt(svg, X(v), y1 + 16, v.toFixed(1), { "text-anchor": "middle" }));
+    txt(svg, (x0 + x1) / 2, 254, "exceso de racha G − 1 (mediana)", { "text-anchor": "middle" });
+    txt(svg, x0 + 4, y0 + 10, "SD1 mediana", {});
+    mk("line", { x1: X(0.2), y1: Y(26 * 0.2), x2: X(0.6), y2: Y(26 * 0.6), stroke: "var(--teal)", "stroke-width": 2, "stroke-dasharray": "6 4" }, svg);
+    ST.forEach((s) => {
+      const out = s.n === "Minas Sur";
+      mk("circle", { cx: X(s.g), cy: Y(s.sd), r: 6, fill: out ? "var(--red)" : "var(--ink)" }, svg);
+      txt(svg, X(s.g) + 9, Y(s.sd) + (s.n === "Alto Quellaveco" ? 14 : -6), s.n, { style: `fill:${out ? "var(--red)" : "var(--ink)"}` });
+    });
+  }
+
+  // ---------- 5 ----------
+  function map() {
+    const svg = $("s5map"); svg.innerHTML = "";
+    const e0 = 320500, e1 = 330300, n0 = 8098300, n1 = 8109800;
+    const x0 = 30, x1 = 300, y0 = 20, y1 = 300;
+    const sc = Math.min((x1 - x0) / (e1 - e0), (y1 - y0) / (n1 - n0));
+    const X = (e) => x0 + (e - e0) * sc, Y = (n) => y1 - (n - n0) * sc;
+    for (let k = 0; k <= 9; k += 3) {
+      mk("line", { x1: X(e0 + k * 1000), y1: y0, x2: X(e0 + k * 1000), y2: y1, stroke: "var(--grid)" }, svg);
+      txt(svg, X(e0 + k * 1000), y1 + 16, `${k} km`, { "text-anchor": "middle" });
+    }
+    ST.forEach((s) => {
+      const r = 2 + s.sdn * 0.9;
+      mk("circle", { cx: X(s.e), cy: Y(s.N), r, fill: s.n === "Minas Sur" ? "var(--red)" : "var(--teal)", opacity: 0.35 }, svg);
+      mk("circle", { cx: X(s.e), cy: Y(s.N), r: 2.5, fill: "var(--ink)" }, svg);
+      const left = s.n === "Alto Quellaveco" || s.n === "Tala Legal";
+      txt(svg, X(s.e) + (left ? -r - 4 : r + 4), Y(s.N) + (s.n === "Tala-1" ? -8 : s.n === "Papujune" ? 12 : 4),
+        `${s.n} · ${s.sdn}°`, { "text-anchor": left ? "end" : "start", style: "fill:var(--ink)" });
+    });
+    txt(svg, x0, 12, "N ↑ · círculo = SD1 mediana con viento del norte", {});
+  }
+
+  // ---------- 6 ----------
+  function ladder() {
+    const rows = [
+      ["V1 (lo actual)", 34.48, 10.16, "var(--red)"],
+      ["Logística, sin D1", 12.06, 5.40, "var(--amber)"],
+      ["Boosting, sin D1 (caso real)", 9.76, 4.60, "var(--teal)"],
+      ["Boosting, global (6 estaciones)", 8.14, 3.76, "var(--teal)"],
+      ["Boosting, propio de cada estación", 6.84, 3.39, "var(--teal)"],
+      ["Elección perfecta, σ estimada", 3.96, 2.38, "var(--muted)"],
+      ["Oráculo (σ real, elección perfecta)", 3.70, 2.22, "var(--ink)"],
+    ];
+    const svg = $("s6ladder"); svg.innerHTML = "";
+    const lx = 270, x1 = 840, X = (v) => lx + (x1 - lx) * v / 36, rowH = 40, top = 30;
+    [0, 10, 20, 30].forEach((v) => { mk("line", { x1: X(v), y1: top - 10, x2: X(v), y2: top + rows.length * rowH, stroke: "var(--grid)" }, svg); txt(svg, X(v), top - 14, `${v}°`, { "text-anchor": "middle" }); });
+    rows.forEach(([name, north, all, color], i) => {
+      const y = top + i * rowH;
+      txt(svg, lx - 10, y + 17, name, { "text-anchor": "end", style: "fill:var(--ink);font-size:12px" });
+      mk("rect", { x: lx, y: y + 4, width: X(north) - lx, height: 14, fill: color, rx: 2 }, svg);
+      mk("rect", { x: lx, y: y + 21, width: X(all) - lx, height: 7, fill: color, opacity: 0.45, rx: 2 }, svg);
+      txt(svg, X(north) + 6, y + 15, `${north.toFixed(1)}° norte`, { style: "fill:var(--ink)" });
+      txt(svg, X(all) + 6, y + 29, `${all.toFixed(1)}° todas`, {});
+    });
+  }
+  function stations() {
+    const d = [["Cortadera", 35.50, 7.11, 3.53], ["Papujune", 36.06, 10.23, 4.16], ["Alto Quellaveco", 16.46, 4.17, 1.92],
+               ["Tala-1", 13.20, 4.77, 2.50], ["Tala Legal", 44.23, 14.72, 6.51], ["Minas Sur", 61.40, 18.65, 3.55]];
+    const svg = $("s6st"); svg.innerHTML = "";
+    const lx = 150, x1 = 840, X = (v) => lx + (x1 - lx) * v / 65, rowH = 40, top = 26;
+    [0, 20, 40, 60].forEach((v) => { mk("line", { x1: X(v), y1: top - 8, x2: X(v), y2: top + d.length * rowH - 10, stroke: "var(--grid)" }, svg); txt(svg, X(v), top - 12, `${v}°`, { "text-anchor": "middle" }); });
+    d.forEach(([n, v1, m, o], i) => {
+      const y = top + i * rowH + 10;
+      txt(svg, lx - 10, y + 4, n, { "text-anchor": "end", style: "fill:var(--ink);font-size:12px" });
+      mk("line", { x1: X(o), y1: y, x2: X(v1), y2: y, stroke: "var(--rule)", "stroke-width": 2 }, svg);
+      mk("circle", { cx: X(v1), cy: y, r: 6, fill: "var(--red)" }, svg);
+      mk("circle", { cx: X(m), cy: y, r: 6, fill: "var(--teal)" }, svg);
+      mk("circle", { cx: X(o), cy: y, r: 5, fill: "var(--ink)" }, svg);
+      txt(svg, X(m), y - 10, m.toFixed(1), { "text-anchor": "middle", style: "fill:var(--teal)" });
+      txt(svg, X(v1), y - 10, v1.toFixed(1), { "text-anchor": "middle", style: "fill:var(--red)" });
+    });
+  }
+
+  ["s1mu", "s1sg"].forEach((id) => $(id).addEventListener("input", s1));
+  ["s2a", "s2sg"].forEach((id) => $(id).addEventListener("input", s2));
+  $("s3sg").addEventListener("input", s3);
+  $("s3new").addEventListener("click", () => { seed3 += 1; s3(); });
+  ["s4p", "s4a"].forEach((id) => $(id).addEventListener("input", s4));
+  s1(); s2(); s3(); s4(); gust(); map(); ladder(); stations();
+})();
+</script>

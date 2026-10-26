@@ -1,4 +1,4 @@
-.venv/
+﻿.venv/
 __pycache__/
 *.pyc
 *.egg-info/
@@ -6,7 +6,7 @@ __pycache__/
 .agy_state/
 .claude/
 met_viewer/output/
-# anglo_reporte tiene su propio repositorio git
-anglo_reporte/
+wind_vector/output/aligned_*.csv.gz
 sarallenque_wind/tiles_cache/
 met_viewer/tiles_cache/
+wind_vector/output/protocol_*_v[0-9]*
