@@ -40,7 +40,7 @@ import pandas as pd
 from scipy.stats import norm
 from sklearn.ensemble import HistGradientBoostingClassifier, HistGradientBoostingRegressor
 
-from wind_vector.analyze import BLOCKS, OUT, STATIONS, build_hourly, to_md, valid_mask
+from wind_vector.analyze import BLOCKS, OUT, STATIONS, aligned_path, build_hourly, to_md, valid_mask
 from wind_vector.loader import EXTRA_STATIONS
 from wind_vector.north_sector import abs_diff
 
@@ -138,7 +138,7 @@ class Store:
 
 def build_base(store: Store, st: str) -> None:
     """Serie de 5 min, rasgos de vecinos y verdad horaria de una estación."""
-    df = pd.read_csv(OUT / f"aligned_{st}.csv.gz", parse_dates=["TIMESTAMP"])
+    df = pd.read_csv(aligned_path(st), parse_dates=["TIMESTAMP"])
     s = to_5min(df)
     f = features(s)
     h = build_hourly(df)

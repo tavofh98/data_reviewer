@@ -14,7 +14,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from wind_vector.analyze import OUT, to_md
+from wind_vector.analyze import DATA, aligned_path, to_md
 from wind_vector.loader import DIR_5MIN_EXTRA, _deduplicate, _read_toa5
 from wind_vector.north_mixture import to_5min
 from wind_vector.north_sector import abs_diff
@@ -41,17 +41,24 @@ def signature(direction: pd.Series, ws: pd.Series) -> dict:
             "n 120–240": int(mid.sum()), "P(salto > 60° | 120–240) %": 100 * (mid & jump).sum() / max(mid.sum(), 1)}
 
 
+CLIMAVUE_COLS = ["TIMESTAMP", "WS_ms_Avg", "WindDir_Avg"]
+
+
 def climavue_5min(stem: str) -> pd.DataFrame:
-    cols = ["TIMESTAMP", "WS_ms_Avg", "WindDir_Avg"]
-    df = _deduplicate(_read_toa5(DIR_5MIN_EXTRA / f"{stem}_Table3.dat", cols))
-    df = df[df.index > df.index.max() - pd.Timedelta(days=DAYS)]
+    """Último año de 5 min: del .dat de references/ o, si no está, del paquete data/."""
+    raw = DIR_5MIN_EXTRA / f"{stem}_Table3.dat"
+    if raw.exists():
+        df = _deduplicate(_read_toa5(raw, CLIMAVUE_COLS))
+        df = df[df.index > df.index.max() - pd.Timedelta(days=DAYS)]
+    else:
+        df = pd.read_csv(DATA / f"{stem}_Table3_wind.csv.gz", parse_dates=["TIMESTAMP"], index_col="TIMESTAMP")
     return df.asfreq("5min")
 
 
 def main() -> None:
     rows = []
     for st in ALL:
-        df = pd.read_csv(OUT / f"aligned_{st}.csv.gz", parse_dates=["TIMESTAMP"])
+        df = pd.read_csv(aligned_path(st), parse_dates=["TIMESTAMP"])
         df = df[df["TIMESTAMP"] > df["TIMESTAMP"].max() - pd.Timedelta(days=DAYS)]
         s = to_5min(df)
         rows.append({"estación": st, "sensor": "veleta", "dirección": "WindDir_Avg (A)", **signature(s["A"], s["ws"])})

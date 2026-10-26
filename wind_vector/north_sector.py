@@ -21,7 +21,7 @@ from plotly.subplots import make_subplots
 
 from wind_vector.case_study import (BASELINE, ESTIMATE_COLOR, FONT, GRID, INK, INK_2, MUTED, PAGE, REAL_COLOR, SPEED_COLORS,
                                     SURFACE)
-from wind_vector.analyze import OUT, STATIONS, block, build_hourly, circ_diff, to_md, valid_mask, vector_direction
+from wind_vector.analyze import OUT, STATIONS, aligned_path, block, build_hourly, circ_diff, to_md, valid_mask, vector_direction
 
 THRESHOLDS = (30, 45, 60)       # descarte respecto a la mediana circular de la hora (grados)
 SAFE_LOW, SAFE_HIGH = 20.0, 340.0
@@ -202,7 +202,7 @@ def main() -> None:
              "V0 = `WindDir_Avg` horario; V1 = vectores unitarios de Avg 5 min; MED = mediana circular de los 12 "
              "registros; R*t* = vectores unitarios sin los registros a más de *t*° de la mediana de la hora.\n"]
     for st in STATIONS:
-        df = pd.read_csv(OUT / f"aligned_{st}.csv.gz", parse_dates=["TIMESTAMP"])
+        df = pd.read_csv(aligned_path(st), parse_dates=["TIMESTAMP"])
         h = build_hourly(df)
         mask = valid_mask(h)
         v, avg, usable = build_variants(df, h)

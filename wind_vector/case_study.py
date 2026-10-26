@@ -18,7 +18,7 @@ import pandas as pd
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
 
-from wind_vector.analyze import BLOCKS, OUT, build_hourly, circ_diff, valid_mask
+from wind_vector.analyze import BLOCKS, OUT, aligned_path, build_hourly, circ_diff, valid_mask
 
 STATION = "quellaveco"
 LABEL = "Alto Quellaveco"
@@ -223,7 +223,7 @@ NOTE = (
 
 
 def main() -> None:
-    df = pd.read_csv(OUT / f"aligned_{STATION}.csv.gz", parse_dates=["TIMESTAMP"])
+    df = pd.read_csv(aligned_path(STATION), parse_dates=["TIMESTAMP"])
     h = build_hourly(df)
     mask = valid_mask(h)
     ts = df["TIMESTAMP"]

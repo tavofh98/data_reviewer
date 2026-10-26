@@ -24,6 +24,7 @@ import pandas as pd
 
 HERE = Path(__file__).resolve().parent
 OUT = HERE / "output"
+DATA = HERE.parent / "data"   # paquete de datos versionado (último año); ver data/README.md
 STATIONS = ("cortadera", "papujune", "quellaveco")
 BLOCKS = [f"m{i:02d}" for i in range(1, 13)]
 R_MIN = 0.05  # misma resultante mínima que anglo_reporte/main.py
@@ -42,6 +43,12 @@ VARIANTS = {
     "V4": "D1 5 min ponderado por R",
     "V5": "D1 5 min por velocidad y R (≈Θu)",
 }
+
+
+def aligned_path(station: str) -> Path:
+    """Conjunto alineado de la estación: el de output/ (creado por loader) o, si no existe, el de data/."""
+    local = OUT / f"aligned_{station}.csv.gz"
+    return local if local.exists() else DATA / local.name
 
 
 def circ_diff(a, b):
@@ -165,7 +172,7 @@ def main() -> None:
              "Errores en grados, circulares. Horas evaluadas: completas (12/12), sin calma horaria "
              "(WS_S_WVT > 0) y con todas las variantes definidas.\n"]
     for st in STATIONS:
-        df = pd.read_csv(OUT / f"aligned_{st}.csv.gz", parse_dates=["TIMESTAMP"])
+        df = pd.read_csv(aligned_path(st), parse_dates=["TIMESTAMP"])
         h = build_hourly(df)
         mask = valid_mask(h)
         north = np.abs(circ_diff(h["truth"], 0.0)) <= 45

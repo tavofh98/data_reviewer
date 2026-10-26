@@ -17,7 +17,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from wind_vector.analyze import BLOCKS, OUT, STATIONS, block, build_hourly, circ_diff, to_md, valid_mask
+from wind_vector.analyze import BLOCKS, OUT, STATIONS, aligned_path, block, build_hourly, circ_diff, to_md, valid_mask
 from wind_vector.north_sector import abs_diff, acceptance_rules, build_variants
 
 OFFSET_DATE = {"cortadera": "2024-06-03", "papujune": "2024-09-05", "quellaveco": "2024-06-03"}
@@ -62,7 +62,7 @@ def main() -> None:
              "Alto Quellaveco no lo tiene (fecha de control: 2024-06-03). Antes del desfase la zona muerta (355–360°) se lee "
              "como 0°; después, como 353°. Errores circulares frente al Θ1 horario del logger.\n"]
     for st in STATIONS:
-        df = pd.read_csv(OUT / f"aligned_{st}.csv.gz", parse_dates=["TIMESTAMP"])
+        df = pd.read_csv(aligned_path(st), parse_dates=["TIMESTAMP"])
         cut = pd.Timestamp(OFFSET_DATE[st])
         parts += [f"\n## {st} · desfase: {HAS_OFFSET[st]} · fecha {cut:%Y-%m-%d}\n",
                   "### Huellas en los registros de 5 min\n\n" + to_md(pd.DataFrame(fingerprints(df, cut))) + "\n",

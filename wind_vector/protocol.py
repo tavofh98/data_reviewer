@@ -40,7 +40,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
-from wind_vector.analyze import OUT, STATIONS, build_hourly, valid_mask
+from wind_vector.analyze import OUT, STATIONS, aligned_path, build_hourly, valid_mask
 from wind_vector.loader import EXTRA_STATIONS
 from wind_vector.north_mixture import (BASE, NEAR_NORTH, ROLL, SIGMA_FEATURES, features, mixture_direction,
                                        peak_memory_mb, rolling, soft_hourly, to_5min)
@@ -64,7 +64,7 @@ CONTEXT = 6               # puerta: algún A a ≤ NEAR_NORTH del norte en ±CON
 
 def load(st: str) -> dict:
     """Registros de 5 min y horas del último año de una estación, con su semana módulo 5."""
-    df = pd.read_csv(OUT / f"aligned_{st}.csv.gz", parse_dates=["TIMESTAMP"])
+    df = pd.read_csv(aligned_path(st), parse_dates=["TIMESTAMP"])
     df = df[df["TIMESTAMP"] > df["TIMESTAMP"].max() - pd.Timedelta(days=DAYS)].reset_index(drop=True)
     s = to_5min(df)
     f = features(s)
