@@ -8,7 +8,7 @@ import duckdb
 import pandas as pd
 import numpy as np
 
-SCRATCH = r"C:/Users/GFIGUE~1/AppData/Local/Temp/claude/285f6465460f65d9/6f9b328b-a17b-4634-9003-164cd131128e/scratchpad"
+SCRATCH = str(__import__("pathlib").Path(__file__).resolve().parent)
 REFS = r"C:/Users/gfigueroa/OneDrive - greengroup.com.pe/Documentos/ANGLO/python_programas/control_calidad/references"
 DB = r"C:/Users/gfigueroa/OneDrive - greengroup.com.pe/Documentos/ANGLO/python_programas/database_duck/anglo_ambiental.db"
 EXPLORAR = r"C:/Users/gfigueroa/OneDrive - greengroup.com.pe/Documentos/ANGLO/python_programas/control_calidad/explorar_qaqc"
