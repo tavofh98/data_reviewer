@@ -1,13 +1,16 @@
-# Auditoría escéptica (parcial)
+# Revisión escéptica del consenso espacial
 
-Scripts de una revisión externa del encargo `../AUDIT_BRIEF.md` (2026-11-03). La ejecución se cortó por tiempo
-(20 min) antes de escribir el informe: estos son los análisis que alcanzó a preparar, sin revisar.
+Revisión externa de las afirmaciones de `../CONSENSO.md`. Las conclusiones que se adoptan, con lo verificado, están
+en `../CONSENSO.md` («Conclusión») y en `met_viewer/FINDINGS.md` §8.
 
-| Script | Cubre |
-|---|---|
-| `01_explore_and_reproduce.py` | reproducción de cifras |
-| `02_claims_1_to_5.py` | afirmaciones 1–5 |
-| `03_claims_6_to_9.py` | afirmaciones 6–9 |
-| `04_5min_and_alternatives.py` | 5 min y propuestas alternativas |
+| Carpeta | Encargo | Alcance |
+|---|---|---|
+| `r1/` | `BRIEF_r1.md` | método del consenso (afirmaciones 1–5) y pesos de las vecinas con validación interna |
+| `r2/` | `BRIEF_r2.md` | Altarani, Cortadera, Camp_Quellaveco y giros de septiembre de 2026 (afirmaciones 6–9) |
+| `r3/` | `BRIEF_r3.md` | si el consenso ayuda a detectar las mezclas del norte a 5 min (afirmación 10) |
 
-Algunas rutas apuntan a la carpeta temporal donde se ejecutó; ajustarlas antes de correrlos.
+Contexto común de los tres: `CONTEXTO.md`. Cada carpeta tiene su `INFORME.md` y los scripts que lo producen;
+se ejecutan desde `explorar_qaqc/` con `uv run python <script>`.
+
+Los `0*.py` de esta carpeta son de un primer intento (2026-11-03) que se cortó por tiempo sin conclusiones; sus
+rutas apuntan a la carpeta temporal donde se ejecutó.

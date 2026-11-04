@@ -9,7 +9,36 @@ horas con > 1 m/s en la evaluada. Evaluación en semanas impares, ajuste en sema
 ¿Pueden las vecinas («campo de vientos» de la red) ayudar a reconstruir la dirección vectorial horaria donde solo
 hay `WindDir_Avg`, sobre todo con viento del sector norte, donde el promedio aritmético falla?
 
-## Hallazgos
+## Conclusión (revisión escéptica del 2026-11-04, `audit/r1`–`r3`)
+
+**No. La línea del consenso se cierra; el rescate de la dirección se hace con el clasificador de mezclas de 5 min
+(`../protocol.py`, `../north_mixture.py`), sin vecinas.**
+
+1. **El consenso calibrado solo funciona donde ya hay D1** (`audit/r1`, afirmación 3). Calibrar las vecinas contra
+   el `WindDir_Avg` de la propia estación, que es lo único que hay en una estación sin D1, dispara el error con norte
+   (todas / norte): Cortadera 25.0 / 102.8, Papujune 33.5 / 77.1, Tala-1 19.1 / 59.8, peor que el `WindDir_Avg`
+   sin corregir. La tabla aprende el propio error o, si se filtran las horas dudosas, se queda sin horas del norte.
+   Verificado.
+2. **El consenso no aporta al clasificador de 5 min** (`audit/r3`). Un solo rasgo propio, el salto entre registros
+   consecutivos, separa las mezclas mejor (AUC 0.964) que cualquier versión del consenso (0.91–0.93). Añadido al
+   clasificador completo, el AUC sube menos de 0.001. Entrenando en dos estaciones y evaluando en la tercera, el
+   error con norte empeora de 8.8° a 9.3–9.4°.
+3. **El ejemplo que motivaba el consenso era falso.** De noche en Cortadera sí sopla del O–SO: con `WindDir_Avg`
+   en 210–270° solo el 16 % de las horas es mezcla del norte (168 h, verificado en la tabla horaria; 14 % a 5 min
+   según `audit/r3`). Lo que separa mezcla de viento real es la propia serie: con saltos > 45° entre registros de
+   5 min hay mezcla; estable (≤ 25°), el 98.8 % es viento real.
+4. **Correcciones a los hallazgos de abajo** (`audit/r1`):
+   - Fuera del norte `WindDir_Avg` falla 3.7–5.7° (Minas_Sur 12.1°), no 7–17° (esa cifra era de todas las horas).
+     Verificado.
+   - Excluir vecinas sí importa: Dique_pie_botadero, a 0.55 km de Tala-1, se lleva el 59 % del peso 1/d²; excluir
+     Planta_Concentradora, cuyo desfase es constante en el periodo, empeoró Papujune de 19.4 / 19.8 a 26.4 / 34.1.
+   - Meter vecinas sin D1 contamina el consenso con norte: solo con vecinas con D1, Cortadera baja de 89° a 39°.
+   - Pesos con validación interna: Sarallenque pierde peso; las cifras cambian ≤ 0.3°.
+5. **Alternativa no adoptada** (`audit/r3` §5, sin verificar): el vector medio de toda la red sin calibrar baja el
+   error con norte de 10.4° a 9.3° en validación entre estaciones. Ganancia de segundo orden que ata cada estación al
+   estado del resto de la red.
+
+## Hallazgos (2026-11-03, antes de la revisión)
 
 1. **Interpolar sin más no sirve.** Media de vectores (u, v) de las vecinas ponderada por velocidad y 1/d²: error
    medio 25–58° en todas las horas, frente a 7–17° del `WindDir_Avg` propio (salvo Minas_Sur, 33°). Con toda la red,
@@ -62,17 +91,15 @@ anotados en `met_viewer/FINDINGS.md`:
 | Sarallenque_MQG-15-02 | 2026-02-16 14:00 → 02-17 09:00 | registro congelado |
 
 Cortadera y Alto_Quellaveco empiezan con registros perdidos hacia el mediodía (firma de visita de campo):
-pedir los partes de esas fechas.
+pedir los partes de esas fechas. La revisión (`audit/r2`) los mide como giros rígidos, iguales de día y de noche:
+Cortadera −73° ± 4° desde 2026-09-13 13:00 y Alto_Quellaveco −88° ± 5° desde 2026-09-15 12:00 (verificado:
+−74° / −71° frente a Calientes1 y −85° / −94° frente a Minas_Sur, día / noche). Se restituyen sumando +73° y
++88°. Los fallos nuevos de sensor y de sitio están en `met_viewer/FINDINGS.md` §8.
 
 ## Pendiente
 
-- El peso de cada vecina en `consensus_pairs.py` se calcula sobre las mismas horas con que se calibró
-  (señalado en una auditoría externa): sobrepondera vecinas con pocas horas, como Sarallenque desde 2026-09-25.
-  Calcularlo con semanas no usadas en la calibración.
-- Auditoría externa escéptica en curso (`AUDIT_BRIEF.md`): relanzar si no terminó.
-- Siguiente paso propuesto: usar el consenso como rasgo de régimen en el clasificador de mezclas del norte del
-  protocolo de 5 min (`../protocol.py`) y comprobar si baja de 9.8° con norte. En las estaciones sin D1 habría que
-  calibrar con sus horas limpias (regla R4).
+- Decidir si los giros de septiembre se corrigen (+73°, +88°) o se excluyen en `met_viewer/stations.py`
+  (`WIND_EXCLUDED`), y pedir los partes de campo de esas visitas.
 - Nuevas tablas de 5 min en `references/` (2026-11-03): Altarani, Alto_Tala, Apacheta, Calacaja, Camp_Quellaveco,
   Charaque, PCHAP, Planta_Concentradora, Sarallenque. DME3_Cortadera solo llega a 2026-04-13.
 

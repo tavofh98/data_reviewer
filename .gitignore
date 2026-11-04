@@ -10,3 +10,5 @@ wind_vector/output/aligned_*.csv.gz
 sarallenque_wind/tiles_cache/
 met_viewer/tiles_cache/
 wind_vector/output/protocol_*_v[0-9]*
+wind_vector/consensus/audit/**/agy_*
+wind_vector/consensus/audit/**/*.pkl

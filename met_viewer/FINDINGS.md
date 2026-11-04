@@ -329,6 +329,13 @@ rugosidad que no se conoce).
 | Charaque | HR | 752 h en 101.2 % (ene–abr 2025), aceptadas por el rango | calibración |
 | Apacheta / Minas_Sur | HR | cambio de nivel en ene-2026 / may-2026 | cambio de sensor (Apacheta: mismo mes que su pluviómetro) |
 | Calientes1 | T, HR | jul-2025: 64 % de valores redondeados a un decimal (normal ~10 %) | cambio de programa |
+| Cortadera | dirección | desde 2026-09-13 13:00 (faltan 11 y 12 h): giro rígido de −73° ± 4°, igual de día y de noche (−74° / −71° frente a Calientes1; seis vecinas coinciden) | visita de campo; se restituye sumando +73°. Fuente: `wind_vector/consensus/audit/r2` |
+| Alto_Quellaveco | dirección | desde 2026-09-15 12:00 (falta 11 h): giro rígido de −88° ± 5° (−85° / −94° frente a Minas_Sur, día / noche) | visita de campo; se restituye sumando +88° |
+| Cortadera | dirección nocturna | desde sep-2022 las noches en 90–135° pasan de 0–2 % a 46–71 % (53–65 % desde 2023); antes el 84 % caía en 45–90° | cambio de sitio o de orientación sin fechar con exactitud; sin confirmar |
+| Altarani | dirección nocturna | ene–mar 2025: noches en 90–180° al 52 %, 0 % y 17 % (resto de meses 92–98 %); en feb-2025 la noche viene de ~288° | fallo o giro temporal no documentado; fuera del periodo del consenso |
+| Planta_Concentradora | dirección | desde 2024-04-06: de día +73° respecto a Papujune y de noche −9°; coseno del ciclo diario con las vecinas −0.15 a 0.44 (antes 0.77–0.95) | cambio de orientación o de sitio; no es un giro único (signos opuestos día/noche). Cifras de la revisión externa, sin verificar por separado |
+| Camp_Quellaveco | dirección nocturna | en horas con > 1 m/s la noche no tiene dirección dominante desde el 2022-10-06 (constancia 0.05–0.20, antes 0.84–0.92), repartida en los cuatro cuadrantes | sitio, no anemómetro: el punto nuevo es turbulento de noche (`audit/r2`); complementa la fila de la reubicación |
+| Charaque / Sarallenque_MQG-15-02 | viento | registros congelados (dirección y velocidad fijas): Charaque 2026-01-14 14:00 → 01-15 12:00 y 2026-01-28 14:00 → 01-29 07:00; MQG 2026-02-16 14:00 → 02-17 09:00 | logger o registro; sin verificar por separado |
 
 Calacaja no es un fallo: está ~800 m más abajo que Calientes1 y es constantemente +4.5 °C más
 cálida, con el mismo ciclo diario. Sus parejas son Calientes1, Chalsos y DME3.
