@@ -23,11 +23,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 DB_PATH = ROOT.parents[2] / "database_duck" / "anglo_ambiental.db"
 
-# Variables que se reportan: la norma vive en anglo_reporte/matrices.py (sin dependencias).
-_spec = importlib.util.spec_from_file_location("_matrices", ROOT.parents[2] / "anglo_reporte" / "matrices.py")
+# Variables que se reportan: la norma vive en anglo_reporte/report_variables.py (sin dependencias).
+_spec = importlib.util.spec_from_file_location("_report_variables", ROOT.parents[2] / "anglo_reporte" / "report_variables.py")
 _mod = importlib.util.module_from_spec(_spec)  # type: ignore[arg-type]
 _spec.loader.exec_module(_mod)  # type: ignore[union-attr]
-REPORTED: dict[str, list[str]] = _mod.VARIABLES_REPORTE["meteorologia"]
+REPORTED: dict[str, list[str]] = _mod.REPORT_VARIABLES["meteorologia"]
 
 
 @dataclass(frozen=True)
@@ -135,6 +135,7 @@ BARO_OFFSET: dict[str, float] = {
 # Tramos en que la DIRECCIÓN del viento no es comparable con la de las vecinas: quedan fuera del
 # agrupamiento por régimen de viento. (inicio, fin) semiabierto; None = sin límite. Ver FINDINGS §8-§9.
 WIND_EXCLUDED: dict[str, list[tuple[str | None, str | None]]] = {
+    "Camp_Quellaveco": [("2026-08-10", None)],      # base rajada y cambiada el 2026-09-10: veleta rígida y hélice que no arranca (FINDINGS §8); hasta confirmar reparación en campo
     "Huachunta": [("2026-02-26", "2026-05-25")],   # veleta pegada en ~152°
     "Sarallenque": [("2025-07-14", None)],          # traslado del shelter, girado ~180°, sector S–O tapado
     "Mina_Norte": [(None, None)],                   # traslados del shelter sin fechar

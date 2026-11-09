@@ -2,11 +2,11 @@
 
 - por variable: las variables que no caben en la vista por grupo, cada una con sus propios
   grupos. Hoy, solo el viento.
-- por grupo: un agrupamiento único (de T y HR); una sección por grupo con temperatura, humedad y
-  desvío de presión. El viento no va aquí: dentro de esos grupos no guarda relación.
+- por grupo: un agrupamiento único (de T y HR); una sección por grupo con temperatura y humedad.
+  El viento no va aquí: dentro de esos grupos no guarda relación. La presión quedó fuera de las
+  figuras (2026-11-09) hasta decidir cómo analizarla; el QC BARO_DEV sigue activo.
 
-Variables: temperatura, humedad relativa, viento y desvío de presión (presión reducida a 4 000 m
-menos la mediana de las vecinas; ver qc.baro_deviation). El viento, solo en la vista por
+Variables: temperatura, humedad relativa y viento. El viento, solo en la vista por
 variable: mapas de rosas por zona (rose_maps.py) y, por cada grupo de viento, la serie horaria
 de velocidad y su ciclo diario medio.
 Los huecos en las líneas son horas sin dato o descartadas; los descartes del QC se ven como
@@ -114,8 +114,8 @@ def figura(grupo: list[str], var: str, series: dict[str, pd.Series],
     return fig
 
 
-VARIABLES_VISTA = (data.WS,)      # T, HR y presión van solo en la vista por grupo
-VARIABLES_GRUPO = (data.TEMP, data.RH, "BP_DEV")
+VARIABLES_VISTA = (data.WS,)      # T y HR van solo en la vista por grupo
+VARIABLES_GRUPO = (data.TEMP, data.RH)
 
 # --- Viento (vista por variable) -------------------------------------------------------------
 
@@ -230,16 +230,19 @@ def construir_por_variable(grupos: dict[str, list[list[str]]], limpio, flags, de
     return _pagina("Meteorología por variable", indice, secciones, ini, fin, borrador)
 
 
-def construir_por_grupo(grupos: list[list[str]], limpio, flags, dev_horario, ini, fin, borrador: bool) -> str:
-    """Vista por grupo: un agrupamiento único; una sección por grupo con T, HR y desvío de presión."""
+def construir_por_grupo(grupos: list[list[str]], limpio, flags, dev_horario, ini, fin, borrador: bool,
+                        notas: dict[str, str] | None = None) -> str:
+    """Vista por grupo: un agrupamiento único; una sección por grupo con T y HR.
+    `notas` es {estación: texto}: se muestra bajo la lista de estaciones de cada grupo donde está."""
     h, secciones, indice = _Html(), [], []
     for n, grupo in enumerate(grupos, 1):
         divs = [h.div(f) for var in VARIABLES_GRUPO
                 if (f := _figura_de(grupo, var, limpio, flags, dev_horario, fin, TITULOS[var])) is not None]
         if divs:
+            leyenda = "".join(f'<p class="nota">{html.escape(notas[e])}</p>' for e in grupo if notas and e in notas)
             indice.append((f"g{n}", f"G{n}"))
             secciones.append(f'<section id="g{n}"><h2>Grupo {n}</h2><p class="est">{html.escape(", ".join(grupo))}</p>'
-                             + _resumen_qc(flags[flags.estacion_id.isin(grupo)]) + "".join(divs) + "</section>")
+                             + leyenda + _resumen_qc(flags[flags.estacion_id.isin(grupo)]) + "".join(divs) + "</section>")
     return _pagina("Meteorología por grupo", indice, secciones, ini, fin, borrador)
 
 
@@ -415,7 +418,7 @@ def _pagina(titulo: str, indice: list[tuple[str, str]], secciones: list[str],
  section{{background:{SUPERFICIE};border:1px solid rgba(11,11,11,.1);border-radius:8px;padding:12px;margin:16px 0}}
  h1{{font-size:20px;margin:0 0 4px}} h2{{font-size:17px;margin:0}}
  h3{{font-size:15px;margin:20px 0 4px;padding-top:12px;border-top:1px solid {GRID}}}
- .est{{color:{INK_2};margin:4px 0}} .qc{{color:{MUTED};font-size:13px;margin:0 0 8px}}
+ .est{{color:{INK_2};margin:4px 0}} .nota{{color:{INK_2};font-size:13px;margin:2px 0 6px;padding-left:8px;border-left:3px solid {GRID}}} .qc{{color:{MUTED};font-size:13px;margin:0 0 8px}}
  .aviso{{color:{CRITICO};font-weight:600}}
  #modo{{font:inherit;font-size:13px;padding:4px 10px;margin:4px 0 6px;border:1px solid {MUTED};border-radius:6px;
         background:{SUPERFICIE};color:{INK};cursor:pointer}}
@@ -426,7 +429,7 @@ def _pagina(titulo: str, indice: list[tuple[str, str]], secciones: list[str],
  #modo[aria-pressed="true"]{{background:#2a78d6;border-color:#2a78d6;color:#fff}}
 </style></head><body>
 <header><h1>{titulo} · {ini:%Y-%m-%d %H:%M} → {fin:%Y-%m-%d %H:%M}</h1>{aviso}
-<button id="modo" type="button" aria-pressed="false" title="Alterna entre valores reales y centrados (cada estación menos su mediana en la ventana). No afecta al desvío de presión, que ya está centrado.">Valores: reales</button>
+<button id="modo" type="button" aria-pressed="false" title="Alterna entre valores reales y centrados (cada estación menos su mediana en la ventana).">Valores: reales</button>
 <nav>{nav}</nav></header>
 {"".join(secciones)}
 <script>{JS_CENTRAR}</script>

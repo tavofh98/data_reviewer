@@ -48,8 +48,8 @@ def periodo(argv: list[str] | None = None) -> tuple[pd.Timestamp, pd.Timestamp]:
     return fin - pd.Timedelta(days=n), fin
 
 
-def cargar_grupos() -> tuple[dict[str, list[list[str]]], list[list[str]] | None, bool]:
-    """(GROUPS por variable, GROUPS_COMBINED o None, es_borrador) de groups.py o groups_draft.py.
+def cargar_grupos() -> tuple[dict[str, list[list[str]]], list[list[str]] | None, bool, dict[str, str]]:
+    """(GROUPS por variable, GROUPS_COMBINED o None, es_borrador, NOTES) de groups.py o groups_draft.py.
 
     Un GROUPS que sea una lista simple se usa para todas las variables y como agrupamiento único.
     """
@@ -60,13 +60,13 @@ def cargar_grupos() -> tuple[dict[str, list[list[str]]], list[list[str]] | None,
             if isinstance(por_var, list):
                 combinados = combinados or por_var
                 por_var = {v: por_var for v in (data.TEMP, data.RH, data.WS)}
-            return por_var, combinados, borrador
+            return por_var, combinados, borrador, getattr(m, "NOTES", {})
     raise SystemExit("No hay groups.py ni groups_draft.py: corre antes met_viewer/grouping.py")
 
 
 def main() -> None:
     ini, fin = periodo()
-    por_var, combinados, borrador = cargar_grupos()
+    por_var, combinados, borrador, notas = cargar_grupos()
     datos = data.load(ini - MARGEN, fin)
     limpio, flags, _ = qc.apply_qc(datos)
     dev = qc.baro_deviation(limpio, smooth=False)
@@ -86,7 +86,7 @@ def main() -> None:
                 viewer.construir_por_variable(por_var, limpio, flags, dev, ini, fin, borrador))]
     if combinados:
         salidas.append(("meteorologia_por_grupo.html",
-                        viewer.construir_por_grupo(combinados, limpio, flags, dev, ini, fin, borrador)))
+                        viewer.construir_por_grupo(combinados, limpio, flags, dev, ini, fin, borrador, notas)))
     else:
         print("Aviso: el archivo de grupos no tiene GROUPS_COMBINED; no se genera la vista por grupo")
     for nombre, html_txt in salidas:

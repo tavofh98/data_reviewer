@@ -2,7 +2,7 @@
 import warnings; warnings.filterwarnings("ignore")
 import sys, duckdb, numpy as np, pandas as pd
 import re, types
-# Coordenadas leídas del texto de stations.py (su import depende de anglo_reporte/matrices.py, ausente)
+# Coordenadas leídas del texto de stations.py, sin importarlo (su import carga anglo_reporte/report_variables.py)
 _src = open(r"C:/Users/gfigueroa/OneDrive - greengroup.com.pe/Documentos/ANGLO/python_programas/control_calidad/explorar_qaqc/met_viewer/stations.py", encoding="utf-8").read()
 STATIONS = {m[0]: types.SimpleNamespace(easting=float(m[1]), northing=float(m[2]))
             for m in re.findall(r'"([^"]+)":\s+Station\((\d+), (\d+)', _src)}

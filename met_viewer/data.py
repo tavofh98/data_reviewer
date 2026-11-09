@@ -1,4 +1,4 @@
-"""Carga de meteorología desde DuckDB (solo lectura), limitada a lo que marca VARIABLES_REPORTE."""
+"""Carga de meteorología desde DuckDB (solo lectura), limitada a lo que marca REPORT_VARIABLES."""
 from __future__ import annotations
 
 import duckdb

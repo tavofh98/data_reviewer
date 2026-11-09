@@ -26,6 +26,10 @@ Enlace promedio; se parte solo la rama que supera MAX_POR_GRUPO estaciones. Una 
 queda sola se une al grupo de su estación más correlacionada; si ese grupo está lleno, forma
 un grupo propio con sus 2 estaciones más correlacionadas (que aparecen así en dos grupos).
 Ilo, única estación costera, va aparte.
+En T y HR, una estación con menos de MIN_DIAS_NUCLEO días con dato no entra en el corte: se
+asigna después al grupo de menor distancia media y, si el segundo queda a menos de MARGEN_CORTAS,
+aparece en los dos. En T y HR ninguna estación queda sola: la más lejana de las demás (Calacaja)
+va con su grupo más cercano aunque sea el eslabón débil (ver FINDINGS §5).
 
 Además calcula un agrupamiento ÚNICO (GROUPS_COMBINED) con la media de las distancias de T y
 HR (sin viento; ver VARS_COMBINADO), con la misma regla para las estaciones sueltas: es el
@@ -65,6 +69,13 @@ MIN_PARECIDO_VIENTO = 0.60
 # (medido 2025-09 → 2026-09).
 MAX_DIF_CICLO_VEL = 0.25
 MAX_POR_GRUPO = 6
+# T y HR: una estación con menos de MIN_DIAS_NUCLEO días con dato no entra en el corte del
+# dendrograma; se asigna después (asignar_cortas). Mina_Norte, con 73 días, deformaba la partición
+# anual de HR: sin ella el ARI de ventanas pasa de 0.63 a 0.90 (medido 2025-11 → 2026-11).
+MIN_DIAS_NUCLEO = 180
+# Si el segundo grupo candidato queda a menos de esta distancia (1 − r) del primero, la estación
+# corta aparece en los dos. Mina_Norte: margen 0.005 en T y 0.000 en HR.
+MARGEN_CORTAS = 0.05
 APARTE = ("Ilo",)
 SALIDA = Path(__file__).parent / "groups_draft.py"
 
@@ -146,6 +157,17 @@ def distancia_ciclo_velocidad(limpio: dict[str, pd.DataFrame], estaciones) -> pd
     return pd.DataFrame({a: {b: float((c[a] - c[b]).abs().mean()) for b in c} for a in c})
 
 
+def _sin_duplicados(grupos: list[list[str]], retiradas: list[str]) -> tuple[list[list[str]], list[str]]:
+    """Cierra una separación sin figuras repetidas. Una estación puede estar en dos grupos (regla de
+    cortar), así que `retiradas` puede traerla dos veces y dejar grupos de 1 que ya figuran en otro.
+    Devuelve los grupos sin grupos vacíos ni restos de 1 estación repetida, y las retiradas únicas
+    que no quedaron en ningún grupo."""
+    grupos = [g for g in grupos if g]
+    grupos = [g for g in grupos if len(g) > 1 or sum(g[0] in o for o in grupos) == 1]
+    unicas = list(dict.fromkeys(e for e in retiradas if not any(e in g for g in grupos)))
+    return grupos, unicas
+
+
 def separar_por_ciclo(dist: pd.DataFrame, grupos: list[list[str]], maximo: float) -> tuple[list[list[str]], list[str]]:
     """Saca de su grupo, de una en una y empezando por la peor, a la estación cuya diferencia media
     con el resto es > maximo; así una estación rara no arrastra fuera a las que se le comparan."""
@@ -160,7 +182,7 @@ def separar_por_ciclo(dist: pd.DataFrame, grupos: list[list[str]], maximo: float
             resto.remove(peor)
             sueltas.append(peor)
         quedan.append(resto)
-    return quedan, sueltas
+    return _sin_duplicados(quedan, sueltas)
 
 
 def separar_sueltas(dist: pd.DataFrame, grupos: list[list[str]], minimo: float) -> tuple[list[list[str]], list[str]]:
@@ -169,11 +191,38 @@ def separar_sueltas(dist: pd.DataFrame, grupos: list[list[str]], minimo: float) 
     for g in grupos:
         par = 1 - dist.loc[g, g]
         medio = (par.sum() - 1) / max(len(g) - 1, 1)
-        sueltas += [e for e in g if len(g) > 1 and medio[e] < minimo]
-        resto = [e for e in g if e not in sueltas]
-        if resto:
-            quedan.append(resto)
-    return quedan, sueltas
+        sacar = [e for e in g if len(g) > 1 and medio[e] < minimo]
+        sueltas += sacar
+        quedan.append([e for e in g if e not in sacar])
+    return _sin_duplicados(quedan, sueltas)
+
+
+def registro_corto(limpio: dict[str, pd.DataFrame], variables) -> list[str]:
+    """Estaciones con menos de MIN_DIAS_NUCLEO días con dato en alguna de `variables`."""
+    return sorted(e for e, df in limpio.items() if e not in APARTE and any(
+        v in df and df[v].notna().sum() < 24 * MIN_DIAS_NUCLEO for v in variables))
+
+
+def asignar_cortas(dist: pd.DataFrame, grupos: list[list[str]], cortas: list[str]) -> list[str]:
+    """Une cada estación de registro corto al grupo con el que tiene menor distancia media (la
+    medida de enlace promedio) sin que ella intervenga en formarlos. Si el segundo grupo queda a
+    menos de MARGEN_CORTAS del primero, entra también en él: es una estación puente. Devuelve una
+    línea por estación con los dos mejores grupos y el margen."""
+    lineas = []
+    for e in cortas:
+        medias = {i: dist.loc[e, g].mean() for i, g in enumerate(grupos) if e not in g and e in dist.index}
+        if not medias:
+            continue
+        orden = sorted(medias, key=medias.get)
+        margen = medias[orden[1]] - medias[orden[0]] if len(orden) > 1 else float("inf")
+        destinos = orden[:2] if margen < MARGEN_CORTAS else orden[:1]
+        for i in destinos:
+            grupos[i].append(e)
+            grupos[i].sort()
+        etq = ", ".join(f"G{i + 1} r={1 - medias[i]:.2f}" for i in orden[:2])
+        lineas.append(f"{e}: registro corto, asignada después ({etq}; margen {margen:.3f}"
+                      f"{'; en los dos grupos' if len(destinos) > 1 else ''})")
+    return lineas
 
 
 def distancia_combinada(dists: dict[str, pd.DataFrame]) -> pd.DataFrame:
@@ -274,12 +323,17 @@ def main() -> None:
             dists[var], fuera = distancia_regimen(limpio)
         else:
             dists[var] = distancia(limpio, var)
-        grupos = cortar(dists[var], args.max)
-        sueltas, por_ciclo = [], []
+        sueltas, por_ciclo, notas = [], [], []
         if var == data.WS:
+            grupos = cortar(dists[var], args.max)
             grupos, sueltas = separar_sueltas(dists[var], grupos, MIN_PARECIDO_VIENTO)
             dv = distancia_ciclo_velocidad(limpio, dists[var].index)
             grupos, por_ciclo = separar_por_ciclo(dv, grupos, MAX_DIF_CICLO_VEL)
+        else:
+            cortas = registro_corto(limpio, [var])
+            nucleo = [e for e in dists[var].index if e not in cortas]
+            grupos = cortar(dists[var].loc[nucleo, nucleo], args.max)
+            notas = asignar_cortas(dists[var], grupos, [e for e in cortas if e in dists[var].index])
         mediana = pd.Series({e: df[var].median() for e, df in limpio.items() if var in df})
         lineas += informe(var, dists[var], grupos, mediana, "cos" if var == data.WS else "r")
         if var == data.WS:
@@ -287,6 +341,7 @@ def main() -> None:
                 dif = [dv.loc[e, [o for o in g if o != e]].mean() for e in g if e in dv and len(g) > 1]
                 if dif:
                     lineas.append(f"G{i}: diferencia de ciclo de velocidad con el resto del grupo, máx {max(dif):.2f}")
+        lineas += notas
         if sueltas:
             lineas.append(f"Sin pareja (parecido medio < {MIN_PARECIDO_VIENTO}), una figura cada una: {', '.join(sueltas)}")
         if por_ciclo:
@@ -300,8 +355,12 @@ def main() -> None:
 
     # agrupamiento único (vista por grupo): solo T y HR, con las sueltas unidas a su pareja
     comb = distancia_combinada({v: distancia(limpio, v, rellenar=False) for v in VARS_COMBINADO})
-    combinados = cortar(comb, args.max)
+    cortas = registro_corto(limpio, VARS_COMBINADO)
+    nucleo = [e for e in comb.index if e not in cortas]
+    combinados = cortar(comb.loc[nucleo, nucleo], args.max)
+    notas = asignar_cortas(comb, combinados, [e for e in cortas if e in comb.index])
     lineas.append("== combinado (T, HR)")
+    lineas += notas
     for i, g in enumerate(combinados, 1):
         interna = comb.loc[g, g].to_numpy()[np.triu_indices(len(g), 1)]
         media = f"{1 - interna.mean():.2f}" if len(g) > 1 else "—"

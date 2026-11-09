@@ -114,5 +114,5 @@ uv run python wind_vector/consensus/consensus_diagnosis.py --limpio
 uv run python -m wind_vector.spatial_consensus    # visor: output/consenso_espacial.html
 ```
 
-`met_viewer/stations.py` no importa mientras falte `python_programas/anglo_reporte/matrices.py`; estos scripts
-leen las coordenadas como texto.
+Estos scripts leen las coordenadas de `met_viewer/stations.py` como texto, sin importarlo. (Hasta el 2026-11-09 el
+import fallaba porque `anglo_reporte` había renombrado `matrices.py` a `report_variables.py`; ya está corregido.)
