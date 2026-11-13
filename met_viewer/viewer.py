@@ -413,14 +413,15 @@ def _pagina(titulo: str, indice: list[tuple[str, str]], secciones: list[str],
 <title>{titulo}</title>
 <style>
  body{{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:#f9f9f7;color:{INK};margin:0;padding:16px}}
- header{{position:sticky;top:0;background:#f9f9f7;padding:8px 0;border-bottom:1px solid {GRID};z-index:10}}
+ header{{position:sticky;top:0;background:#f9f9f7;padding:6px 0;border-bottom:1px solid {GRID};z-index:10}}
+ .barra{{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px}}
  header a{{margin-right:12px;color:#2a78d6;text-decoration:none}}
  section{{background:{SUPERFICIE};border:1px solid rgba(11,11,11,.1);border-radius:8px;padding:12px;margin:16px 0}}
- h1{{font-size:20px;margin:0 0 4px}} h2{{font-size:17px;margin:0}}
+ h1{{font-size:20px;margin:0}} h2{{font-size:17px;margin:0}}
  h3{{font-size:15px;margin:20px 0 4px;padding-top:12px;border-top:1px solid {GRID}}}
  .est{{color:{INK_2};margin:4px 0}} .nota{{color:{INK_2};font-size:13px;margin:2px 0 6px;padding-left:8px;border-left:3px solid {GRID}}} .qc{{color:{MUTED};font-size:13px;margin:0 0 8px}}
  .aviso{{color:{CRITICO};font-weight:600}}
- #modo{{font:inherit;font-size:13px;padding:4px 10px;margin:4px 0 6px;border:1px solid {MUTED};border-radius:6px;
+ #modo{{font:inherit;font-size:13px;padding:4px 10px;margin:0;border:1px solid {MUTED};border-radius:6px;
         background:{SUPERFICIE};color:{INK};cursor:pointer}}
  .periodo{{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-size:13px;margin:8px 0}}
  .periodo input,.periodo select,.periodo button{{font:inherit;padding:3px 6px;border:1px solid {MUTED};
@@ -428,9 +429,9 @@ def _pagina(titulo: str, indice: list[tuple[str, str]], secciones: list[str],
  .periodo button{{cursor:pointer}} #r_txt{{color:{INK_2}}}
  #modo[aria-pressed="true"]{{background:#2a78d6;border-color:#2a78d6;color:#fff}}
 </style></head><body>
-<header><h1>{titulo} · {ini:%Y-%m-%d %H:%M} → {fin:%Y-%m-%d %H:%M}</h1>{aviso}
+<header><div class="barra"><h1>{titulo} · {ini:%Y-%m-%d %H:%M} → {fin:%Y-%m-%d %H:%M}</h1>
 <button id="modo" type="button" aria-pressed="false" title="Alterna entre valores reales y centrados (cada estación menos su mediana en la ventana).">Valores: reales</button>
-<nav>{nav}</nav></header>
+<nav>{nav}</nav></div>{aviso}</header>
 {"".join(secciones)}
 <script>{JS_CENTRAR}</script>
 <script>{JS_ROSAS}</script>

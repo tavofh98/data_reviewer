@@ -108,7 +108,9 @@ STATIONS: dict[str, Station] = {
     "Minas_Sur":             Station(329299, 8106779, 4119, 4111, _torre()),
     "PMC-4_met":             Station(316969, 8096187, 2884, None, (Sensor("lluvia", "young", _INICIO),)),
     "Papujune":              Station(322640, 8106523, 3777, 3775, _torre()),
-    "Planta_Concentradora":  Station(324023, 8105777, 3868, 3874,
+    # Coordenada de campo (dato del usuario 2026-11-13: 19K 324021 8105786); el KMZ (324023, 8105777)
+    # caía a 9 m. z_dem sigue siendo el del punto del KMZ (a 9 m, dentro de un píxel SRTM).
+    "Planta_Concentradora":  Station(324021, 8105786, 3868, 3874,
                                      _cv(Sensor("lluvia", "young", "2026-02-01"))),
     # Sin torre: WindSonic en un mástil del Shelter 04 (remolque), a ~4 m, con el shelter inclinado,
     # enmallado contiguo al este y talud a ~10 m al este (fotos 2026-05 y 2026-08; GPS a 11 m de
