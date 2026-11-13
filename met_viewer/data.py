@@ -1,10 +1,20 @@
-"""Carga de meteorología desde DuckDB (solo lectura), limitada a lo que marca REPORT_VARIABLES."""
+"""Carga de meteorología desde DuckDB (solo lectura), limitada a lo que marca REPORT_VARIABLES.
+
+Lee la vista `met_corrected` de corrections.db, que es la base cruda con las intervenciones de
+corrections/registry.py aplicadas. Si cambia el registro o entran datos nuevos de un periodo
+corregido: uv run python -m corrections.build_corrections
+"""
 from __future__ import annotations
 
-import duckdb
+import sys
+from pathlib import Path
+
 import pandas as pd
 
 from stations import BARO_OFFSET, DB_PATH, REPORTED, STATIONS
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from corrections.store import connect_corrected  # noqa: E402
 
 TEMP, RH, BP, WS, WD = "AirTC_Avg", "RH_Avg", "BP_mbar_Avg", "WS_ms_Avg", "WindDir_Avg"
 VARIABLES = [TEMP, RH, BP, WS, WD]
@@ -16,10 +26,10 @@ def load(start: pd.Timestamp, end: pd.Timestamp) -> dict[str, pd.DataFrame]:
     Solo entran las estaciones con metadato y las variables de VARIABLES que la estación
     reporta; el resto de columnas no se lee.
     """
-    con = duckdb.connect(str(DB_PATH), read_only=True)
+    con = connect_corrected(DB_PATH)
     try:
         df = con.execute(
-            f"SELECT estacion_id, timestamp, {', '.join(VARIABLES)} FROM meteorologia "
+            f"SELECT estacion_id, timestamp, {', '.join(VARIABLES)} FROM met_corrected "
             "WHERE timestamp >= ? AND timestamp < ? ORDER BY estacion_id, timestamp",
             [start.to_pydatetime(), end.to_pydatetime()],
         ).df()

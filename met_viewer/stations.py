@@ -96,10 +96,11 @@ STATIONS: dict[str, Station] = {
     # Sin torre: viento de un WindSonic y, desde 2026-08-28, todo del ClimaVUE (en la base desde
     # 2026-08-30). Ambos en un mástil sujeto a un shelter sobre remolque, a 3.9-4.1 m del suelo
     # (fotos de campo). z_baro contra 22 vecinas con 22 días, no 365: recalcular con
-    # calibrate_baro.py al pasar de 30 días. El GPS de campo (326497, 8110200; 4004-4015 m
-    # elipsoidal → ~3970) cae a 782 m: sin confirmar si hubo reubicación, la coordenada no se
-    # cambia. Ver FINDINGS.md §2.
-    "Mina_Norte":            Station(327257, 8110014, 3972, 3983,
+    # calibrate_baro.py al pasar de 30 días. Coordenada de campo (dato del usuario 2026-11-12:
+    # 326492-326500, 8110203; coincide en 4-6 m con el GPS de la foto del 2026-09-01). El punto
+    # del KMZ (327257, 8110014) está mal, a 785 m. Queda a 53-59 m de Oeste 1. z_dem en el punto
+    # de la foto. Ver FINDINGS.md §2.
+    "Mina_Norte":            Station(326496, 8110203, 3969, 3983,
                                      (Sensor("viento", "windsonic", _INICIO, 4.0), Sensor("lluvia", "young", _INICIO),
                                       Sensor("viento", "climavue", "2026-08-28", 4.0),
                                       Sensor("termohigro", "climavue", "2026-08-28", 4.0),
@@ -138,7 +139,7 @@ WIND_EXCLUDED: dict[str, list[tuple[str | None, str | None]]] = {
     "Camp_Quellaveco": [("2026-08-10", None)],      # base rajada y cambiada el 2026-09-10: veleta rígida y hélice que no arranca (FINDINGS §8); hasta confirmar reparación en campo
     "Huachunta": [("2026-02-26", "2026-05-25")],   # veleta pegada en ~152°
     "Sarallenque": [("2025-07-14", None)],          # traslado del shelter, girado ~180°, sector S–O tapado
-    "Mina_Norte": [(None, None)],                   # traslados del shelter sin fechar
+    "Mina_Norte": [(None, "2025-11-14")],           # tramo A y anteriores: otro sitio (punto del KMZ). B corregido y C en corrections.db (FINDINGS §9)
     "Chalsos": [(None, None)],                      # dirección invertida respecto a sus vecinas, sin confirmar
 }
 

@@ -80,7 +80,7 @@ Verificado el 2026-09-21 con datos de campo:
 | Camp_Quellaveco | cartel idéntico al KMZ (0 m) y dos GPS a 10–16 m; altitudes de 3590 a 3640 | coordenada **confirmada**; altitudes descartadas por dispersión. La cerró el certificado del barómetro, no el GPS |
 | Charaque | GPS a 6 m del KMZ, 3627–3634 m | coordenada **confirmada**; la altitud es ortométrica sin duda (como elipsoidal caería 44–52 m bajo el terreno) y contradice `z_baro` = 3660. Ver la predicción abajo |
 | Calientes1 | GPS a 12 m del KMZ, sin altitud | coordenada **confirmada** |
-| Mina_Norte | GPS 326497 E, 8110200 N, 4004–4015 m (elipsoidal) | altitud **aceptada**: menos N ≈ 40 da 3964–3975, igual que SRTM (3969 en ese punto, 3972 en el KMZ) y 8–19 m bajo `z_baro` = 3983. Coordenada **en duda**: cae a 782 m del KMZ, que no es error de GPS; posible reubicación al instalar el ClimaVUE (2026-08-28). No se cambia hasta confirmarlo |
+| Mina_Norte | GPS 326497 E, 8110200 N, 4004–4015 m (elipsoidal) | altitud **aceptada**: menos N ≈ 40 da 3964–3975, igual que SRTM (3969 en ese punto, 3972 en el KMZ) y 8–19 m bajo `z_baro` = 3983. Coordenada **confirmada** (2026-11-12): el dato de campo 326492–326500 E, 8110203 N coincide con el GPS en 4–6 m; el error estaba en el KMZ (782 m). `stations.py` actualizado a 326496, 8110203, a 53–59 m de Oeste 1 |
 
 **Mina_Norte ya tiene barómetro** (ClimaVUE, en la base desde 2026-08-30; antes la ingesta no
 cargaba su T, HR y presión). Con 22 días, reducida contra 22 estaciones con `z_baro` fijada
@@ -232,8 +232,8 @@ Casos conocidos que el QC detecta (verificados sobre el historial completo):
   diarios medios del vector de procedencia (u y v por hora). No depende de la escala, así que la
   altura del sensor no manda. La correlación de anomalías de velocidad era débil (r típica
   0.15–0.35 a < 25 km) y juntaba regímenes opuestos (Altarani–Charaque–Sarallenque: −0.26). Fuera
-  del cálculo, los tramos de `stations.WIND_EXCLUDED` (Sarallenque desde 2025-07-14, Mina_Norte y
-  Chalsos completas, el tramo pegado de Huachunta). La estación con parecido medio < 0.60 al
+  del cálculo, los tramos de `stations.WIND_EXCLUDED` (Sarallenque desde 2025-07-14, Chalsos
+  completa, Mina_Norte hasta 2025-11-14, el tramo pegado de Huachunta). La estación con parecido medio < 0.60 al
   resto de su grupo va sola (Dique_pie_botadero: 0.55). Grupos 2025-09 → 2026-09: cos medio 0.92,
   0.83, 0.92, 0.90 y 0.70 (Calacaja–DME3).
 - La distancia y el desnivel pesan parecido en la similitud entre pares (Spearman: velocidad
@@ -329,6 +329,18 @@ tope 6. Las diferencias de ARI de ~0.05 entre topes están dentro del ruido (6 p
 El tope de 6 funciona como límite de tamaño de figura, no como criterio estadístico. Límite que
 se acepta: el grupo con una estación puente pasa de 6.
 
+**Mina_Norte entra al agrupamiento de viento** (2026-11-12, 2025-11-13 → 2026-11-13, tope 6). Con la
+dirección corregida (§6, §9) y `WIND_EXCLUDED["Mina_Norte"]` reducido a `(None, "2025-11-14")` (tramo A
+y anteriores, en otro sitio), el viento pasa de 5 a 6 grupos. El antiguo grupo de Charaque (cos 0.96)
+se parte en dos, ambos con cos medio 0.97:
+- Charaque, Cortadera, Papujune, MQG-15-02 (dif. de ciclo de velocidad máx 0.08);
+- Alto_Tala, Mina_Norte, Tala-1 (máx 0.14).
+
+Los demás grupos de viento, T, HR y combinado no cambian (comparado con el curado del 2026-11-09).
+Se probó un tope de 7 y se descartó: sin partir, el altiplano (Huachunta, Titire, Vizcachas) queda
+dentro de una rama mayor y los umbrales lo dejan sin grupo. Además, Planta_Concentradora pasa a un
+grupo de 6 con un par en 0.58. Pasa con y sin Mina_Norte.
+
 Nota: la métrica del agrupamiento quita el ciclo diario; el ojo, con el botón «centrado», ve el
 ciclo diario. Dos estaciones pueden compartir el tiempo del día a día y aun así verse distintas si
 su ciclo diario difiere (caso Chancado).
@@ -342,6 +354,21 @@ su ciclo diario difiere (caso Chancado).
   de ella; las demás se ponen al día al entrar en pantalla.
 - Descartes del QC: huecos en la línea y cruces en la traza «Descartado por QC» (oculta al abrir).
 - Leyenda de viento con el tipo de sensor: «ClimaVUE ~2 m» o «torre».
+- **Origen de los datos (2026-11-12):** el visor lee la vista `met_corrected` de
+  `corrections/corrections.db`, no `meteorologia` directamente. La base cruda no se toca: la ingesta la
+  reconstruye desde los `.dat` y el servidor es su único escritor. La capa de correcciones tiene tres
+  piezas:
+  - `corrections/registry.py`: una intervención por decisión (estación, variable, intervalo
+    `(start, end]` en final de hora, tipo, parámetro, motivo y referencia a este documento);
+  - `met_adjustments`: solo las celdas modificadas, con `raw_value`, `corrected_value`, `method`, `flag`
+    y `correction_id`;
+  - `met_corrected`: las columnas de `meteorologia` con las celdas ajustadas sustituidas, más
+    `adjustment_tags`.
+
+  `uv run python -m corrections.build_corrections` la regenera desde cero. Hay que correrlo si cambia el
+  registro o si entran datos nuevos de un periodo corregido. Comprobado al construirla: la vista tiene las
+  mismas filas que la tabla cruda (1 093 738), 0 celdas distintas fuera de los ajustes, y todos los
+  `raw_value` coinciden con el crudo.
 
 ---
 
@@ -379,9 +406,9 @@ rugosidad que no se conoce).
 | Camp_Quellaveco | T | mismo ciclo diario que Charaque, pero la diferencia mensual salta entre ~+0.4 y −3 °C (dic-2024 → feb-2026) y sube a +1.5 desde mar-2026 | cambios de calibración o de sensor; el QC no detecta escalones en T |
 | Chancado_primario | T | +2.2 a +2.6 °C de día respecto a sus vecinas, igual de noche; amplitud diaria de ~10 °C (2025) a 14–15 °C (jun–jul 2026) | radiación sobre el sensor (protector solar), empeorando |
 | Dique_pie_botadero | viento | (1) desde 2024-T2, 0–0.5 % de las horas con viento de la mitad este (NNE–SSO), de día y de noche, cuando Tala-1 (0.5 km), Alto_Tala y Papujune reciben de noche el 51–83 % del NE–ENE; la dirección solo recorre 260°–278° en el día (Tala-1: 65° → 261°). (2) Nunca en calma: percentil 1 de 1.5–2.3 m/s, frente a un 3–32 % de calmas nocturnas en las vecinas. (3) El 2026-07-27 la velocidad de día baja de ~5 a ~2.3 m/s (Tala-1 sigue en 4–6), la de noche sube de ~4 a ~5.4 y su dirección pasa de ~300° a 271–274°: el ciclo invertido empieza ahí, antes el día doblaba a la noche. DEM (SRTM, anterior al botadero): cañón con horizonte de 35–42° hacia SE–S y abierto al OSO (247°, 1°) y, menos, al ENE (12°) | exposición: ClimaVUE ~2 m junto al shelter y a la ladera (dato del usuario, 2026-09-24); el sector este tapado o el flujo encauzado por el cañón y el botadero; qué cambió el 2026-07-27 está por confirmar en campo |
-| Chalsos | dirección | ~270° de noche y 120–160° de día, al revés que Calientes1/Cortadera/Tala_Legal (~100° / ~270°) | veleta invertida o mal orientada |
+| Chalsos | dirección | ~270° de noche y 120–160° de día, al revés que Calientes1/Cortadera/Tala_Legal (~100° / ~270°) | **No es fallo: es el régimen del sitio** (revisión del 2026-11-12, §9). En los episodios de viento fuerte coincide con sus vecinas (+2° de día, +7° de noche con Cortadera), y su terreno sube hacia el S–SO–O con una quebrada al E–ESE. Su programa es idéntico al de MQG-15-02 (`PMC3-Tripode_01 v4.2`), con la dirección tal cual la da el ClimaVUE. Se descartó la hipótesis de espejo, registrada antes ese mismo día |
 | Huachunta | dirección | veleta pegada en ~152° (mar–may 2026); constancia direccional = 1.00 | fallo mecánico |
-| Sarallenque | viento | desde 2025-07-14 dirección y velocidad cambian a la vez; de noche viene de ~250° en vez de ~78°; sector S–SO–O vacío. Reorientado el 2026-09-25 (marca N al norte; antes al sur) y shelter desplazado unos metros al E | confirmado en campo: sensor orientado al sur (180°). De día, además, la cara sur estaba tapada; con el desplazamiento ya no (ver §9) |
+| Sarallenque | viento | desde 2025-07-14 dirección y velocidad cambian a la vez; de noche viene de ~250° en vez de ~78°; sector S–SO–O vacío. Reorientado el 2026-09-25 (marca N al norte; antes al sur) y shelter desplazado unos metros al E | confirmado en campo: sensor orientado al sur (180°). Revisado el 2026-11-12 (§9): de 2025-09-15 a 2026-09-25 la dirección es un **espejo** (real = K − lectura), no un giro; con él cuadran día y noche sin necesidad de un obstáculo en la cara sur |
 | Apacheta | presión | el barómetro del ClimaVUE (integrado) dejó de actualizarse el **2025-12-23 por la tarde** (en la base horaria hay 11 cambios en las 20 h de ese día y ninguno al siguiente; el `.dat` de 5 min tiene un hueco del 2025-11-01 al 12-23, así que la hora exacta, ~17:00, se apoya en solo 1.5 h de 5 min). Antes cambiaba en el 31–35 % de los registros de 5 min a cualquier temperatura (≈ 22 cambios al día en los datos horarios, como Papujune); desde 2026-01-20 cambia en ≤ 3 % (0 % con T ≤ 5 °C; casi todos los cambios caen entre 7 y 17 h) y, en horario, 0.3–3.1 cambios al día según el mes (ene–abr 1.9–3.1; mayo–nov 0.3–1.3). Los valores retenidos siguen centrados: Apacheta − Papujune ≈ +2 hPa antes y después, pero el desvío pasa de 0.15 a 0.8–1.4 hPa (la presión real varía ~1–2 hPa al día). T, HR y batería del mismo logger siguen normales. Del 2026-01-01 al 01-05 hubo cambios de nuevo (12, 11, 7, 5 al día) justo antes de un hueco de datos (01-06 → 01-11). Persistió tras la limpieza y reinicio físico del 2026-05-20 y el mantenimiento del ClimaVUE del 2026-06-03 (`intervenciones_meteorologia.csv`). Antes de 2021-05 son registros en cero (§4) | fallo del barómetro del ClimaVUE (o de su lectura por SDI-12): mide, pero devuelve casi siempre el mismo valor. El QC lo descarta por `STUCK` (≈ 672 h cada 30 días); por eso Apacheta queda fuera de `calibrate_baro.py` (< 30 días válidos). Coincide en fecha con el cambio de nivel de su HR (ene-2026, fila siguiente) y con el mes del pluviómetro Young (dic-2025, `stations.py`); qué se tocó el 2025-12-23 está por confirmar en campo |
 | Camp_Quellaveco | viento | desde el 2022-10-06 (06–12 h) la velocidad nocturna cae a 0.3–0.6 veces la de sus vecinas (antes 0.8–1.0), con 25–70 % de horas en calma, y la dirección nocturna deja de seguirlas (de ~80° a 120–260°); de día sopla 1.3–2 veces más que ellas. Ese mismo día, la presión reducida baja 4.9 mbar (+7.0 → +2.2) | reubicación de la estación o de la torre a un punto más alto (~60 m) y resguardado de noche (criterios B y C de WIND_REVIEW, más `BARO_DEV`). También coinciden viento y presión el 2020-10-27; el escalón de −2.5 mbar del 2024-03-24 no tiene cambio de viento esa semana |
 | Camp_Quellaveco | viento nocturno | tras la calibración del 2026-09-10, el 37 % de las horas de noche en 0.00 exacto (antes 0 %), en noches enteras (14→15, 16→17, 22→23 sep) mientras Chancado (0.7 km) sopla 1.3–2.3 m/s del NE; la dirección queda congelada toda la noche con décimas de grado (94.6–95.1°, 66.2°, 87.4°). Antes de la calibración, la dirección nocturna cambiaba 43° de una hora a otra (Chancado: 20°) y con < 0.5 m/s apuntaba a 205–245°, contra el drenaje NE–E de las vecinas; parecido con Chancado: 36° de diferencia mediana en ago–sep 2025, 54° antes y 49° después. De día, sin cambio (oeste en el 98–100 % de las horas; +6° desde el 14-sep) | después: sensor que no arranca (rozamiento, umbral o programa); antes: ruido de un sensor en su umbral, ya peor que en 2025. De noche solo valen las horas con ≥ 0.5 m/s. Criterio G de WIND_REVIEW |
@@ -390,13 +417,23 @@ rugosidad que no se conoce).
 | Charaque | HR | 752 h en 101.2 % (ene–abr 2025), aceptadas por el rango | calibración |
 | Apacheta / Minas_Sur | HR | cambio de nivel en ene-2026 / may-2026 | cambio de sensor (Apacheta: mismo mes que su pluviómetro) |
 | Calientes1 | T, HR | jul-2025: 64 % de valores redondeados a un decimal (normal ~10 %) | cambio de programa |
+| Calientes1 | dirección | **Particularidad, no fallo** (revisión del 2026-11-12, decisión del usuario). De día viene del O (~272–290° desde 2025), donde las vecinas del sur vienen del SO; de noche coincide con ellas (−16° a +18° con Apacheta, DME3 y Tala_Legal en los periodos estables). Tala_Legal (6 km) tiene el mismo régimen (día 291–295°, noche 104–124°). La dirección diurna de la zona va del S al ONO según el valle (DME3 ~185°, Apacheta ~225°, Cerro_Salviani ~235°, Cortadera ~255°, Calientes1 ~280°, Tala_Legal ~292°). En la red sale como la más limpia: 100 % de transiciones en el mismo sentido que sus vecinas y ajuste como giro de 0.94. Aparte, saltos de orientación de 20–30° con día y noche moviéndose juntos frente a Cortadera, Apacheta y DME3: −20° en 2021-T4 → 2022-T1, **+25–30° de 2023-T4 a 2024-T4**, −20° en 2025-T1 y una deriva lenta de −20° de 2025-T3 a 2026-T3 (también frente a Tala_Legal) | el O diurno es del sitio: el valle encauza el flujo diurno. Los saltos, giros pequeños del sensor o de su sujeción; preguntar por mantenimiento hacia 2023-10 y 2025-01. No afectan a su grupo de viento (G1, cos 0.92); solo importan para un uso cuantitativo de la dirección |
 | Cortadera | dirección | desde 2026-09-13 13:00 (faltan 11 y 12 h): giro rígido de −73° ± 4°, igual de día y de noche (−74° / −71° frente a Calientes1; seis vecinas coinciden) | visita de campo; se restituye sumando +73°. Fuente: `wind_vector/consensus/audit/r2` |
 | Alto_Quellaveco | dirección | desde 2026-09-15 12:00 (falta 11 h): giro rígido de −88° ± 5° (−85° / −94° frente a Minas_Sur, día / noche) | visita de campo; se restituye sumando +88° |
+| Alto_Tala | dirección | desde 2026-09-24 (transición el 24 y el 25; estable desde el 26): giro rígido de unos −65°, igual de día y de noche (Tala-1 −64° / −65°, Tala_Legal −71° / −58°, Calientes1 −77° / −72°; mediana diaria de la diferencia, ambas ≥ 1 m/s). Detectado el 2026-11-12 | calibración en campo (hipótesis del usuario). Cuál orientación es la buena está sin decidir: frente a Tala-1 la nueva queda más cerca (antes +38° / +64°, después −26° / −2°), frente a Tala_Legal y Calientes1 la anterior (+6° / +19° y +27° / +25°) |
 | Cortadera | dirección nocturna | desde sep-2022 las noches en 90–135° pasan de 0–2 % a 46–71 % (53–65 % desde 2023); antes el 84 % caía en 45–90° | cambio de sitio o de orientación sin fechar con exactitud; sin confirmar |
 | Altarani | dirección nocturna | ene–mar 2025: noches en 90–180° al 52 %, 0 % y 17 % (resto de meses 92–98 %); en feb-2025 la noche viene de ~288° | fallo o giro temporal no documentado; fuera del periodo del consenso |
-| Planta_Concentradora | dirección | desde 2024-04-06: de día +73° respecto a Papujune y de noche −9°; coseno del ciclo diario con las vecinas −0.15 a 0.44 (antes 0.77–0.95) | cambio de orientación o de sitio; no es un giro único (signos opuestos día/noche). Cifras de la revisión externa, sin verificar por separado |
+| Planta_Concentradora | dirección | desde 2024-04-06: de día +73° respecto a Papujune y de noche −9°; coseno del ciclo diario con las vecinas −0.15 a 0.44 (antes 0.77–0.95) | cambio de orientación o de sitio; no es un giro único (signos opuestos día/noche). Cifras de la revisión externa, sin verificar por separado. Cribado del 2026-11-12 (2025-11 → 2026-11): transiciones del ciclo diario al revés que sus cinco vecinas y mejor ajuste como espejo con 4 de 5. Esa firma no basta (ver Chalsos, §9): con viento fuerte de Papujune (5–6 m/s, 56–80 h) se alinea con ella en el 76–80 % de las horas, lo que apunta a un régimen de sitio (¿traslado en 2024-04?) más que a un espejo. Sin cerrar |
 | Camp_Quellaveco | dirección nocturna | en horas con > 1 m/s la noche no tiene dirección dominante desde el 2022-10-06 (constancia 0.05–0.20, antes 0.84–0.92), repartida en los cuatro cuadrantes | sitio, no anemómetro: el punto nuevo es turbulento de noche (`audit/r2`); complementa la fila de la reubicación |
 | Charaque / Sarallenque_MQG-15-02 | viento | registros congelados (dirección y velocidad fijas): Charaque 2026-01-14 14:00 → 01-15 12:00 y 2026-01-28 14:00 → 01-29 07:00; MQG 2026-02-16 14:00 → 02-17 09:00 | logger o registro; sin verificar por separado |
+
+**Giros de torres en septiembre de 2026.** Cuatro torres con veleta cambian de orientación en dos
+semanas: Camp_Quellaveco (2026-09-10, base cambiada; giro diurno de −43° a −55° tras el abatimiento
+del 10-20), Cortadera (09-13, −73°), Alto_Quellaveco (09-15, −88°) y Alto_Tala (09-24, unos −65°). En las
+tres últimas el giro es rígido, igual de día y de noche, y del mismo signo en todas. Apunta a una campaña
+de calibración con un error de alineación repetido (referencia o declinación mal aplicada); hipótesis del
+usuario: calibraciones. Por confirmar con los partes. Cortadera, Alto_Quellaveco y Alto_Tala están hoy
+dentro de los grupos de viento sin exclusión ni corrección.
 
 Calacaja no es un fallo: está ~800 m más abajo que Calientes1 y es constantemente +4.5 °C más
 cálida, con el mismo ciclo diario. Sus parejas son Calientes1, Chalsos y DME3.
@@ -603,9 +640,84 @@ el tramo posterior a la visita metería en el grupo una dirección diurna a −5
 herramienta solo excluye por fechas, no por franja, así que la noche válida queda fuera hasta que se
 corrija el día.
 
+### Sarallenque: espejo, no giro (revisión del 2026-11-12)
+
+Contexto espacial como con Mina_Norte. Dirección horaria = media de vectores unitarios de los
+registros de 5 min (`references/AAQ_Est_Sarallenque_Table3.dat`, 2021-07 → hoy). Vecinas a 2.0–3.8
+km: MQG-15-02, Minas_Sur, Mina_Norte (corregida), Oeste 1, Chancado_primario, Alto_Quellaveco,
+Altarani y Charaque. Tramos como arriba: S0 antes del traslado (2024-07-14 → 2025-07-14), S2
+(2025-09-15 → 10-06), S3 (10-06 → 11-16), S4 (2025-11-17 → 2026-09-25 10:00) y S5 tras la visita.
+
+**Un giro no cuadra día y noche a la vez.** Frente a las mismas vecinas, S4 pide de día unos +120° y de
+noche unos −120° (≡ +240°). Un giro desplaza todas las direcciones por igual; restar en unas y sumar en
+otras, con media de ~180°, es la firma de un **espejo**: real = K − lectura. La lectura del 2026-09
+(«giro de 180° de noche, día no comparable») era esa misma firma.
+
+**Pruebas:**
+1. **El sentido del recorrido se invierte, en el mismo sitio.** Ciclo diario medio de la mañana (6 → 9 h):
+   S0 77° → 95° → 151° → 225° y S5 86° → 122° → 203° → 210° rolan en sentido horario por el sur, como
+   MQG. S4 bruto rola al revés: 262° → 262° → 214° → 143°. En la tarde, igual. Un giro conserva el
+   sentido; solo un espejo lo invierte. S4 y S5 son el mismo punto (shelter desplazado ~3 m).
+2. **Contraste por sectores de 30° de cada vecina, S4 frente a S5:**
+
+   | | Día | Noche | Día − noche |
+   |---|---|---|---|
+   | Giro necesario θ (7 vecinas) | +44° a +52° | +113° a +174° | ~120° |
+   | Constante del espejo K | 315–323° | 341–353° | ~28° |
+
+3. **Constancia de la relación hora a hora:** el espejo ajusta mejor que el giro en S2, S3 y S4 (con
+   Charaque, 0.91 / 0.82 / 0.88 frente a 0.87 / 0.75 / 0.75). En S0 gana el giro de 0°.
+4. **Con real = 341° − lectura, el ciclo de S4 reproduce el de S5:**
+
+   | Hora | 0 | 7 | 8 | 9 | 12 | 18 | 19 | 20 | 22 |
+   |---|---|---|---|---|---|---|---|---|---|
+   | S4 corregido | 82° | 79° | 127° | 198° | 210° | 181° | 136° | 109° | 89° |
+   | S5 (bien orientado) | 79° | 122° | 203° | 210° | 184° | 196° | 164° | 88° | 78° |
+   | MQG en S4 | 92° | 107° | 206° | 232° | 240° | 235° | 185° | 143° | 104° |
+
+   Misma forma (noche del ENE, salto por el SE–S, regreso por el S–SE). La transición de la mañana va
+   una hora más tarde en S4 y la meseta diurna queda ~25° más al oeste que en S5.
+5. **La prueba del sentido de giro hora a hora no discrimina:** ni las vecinas entre sí correlacionan
+   sus cambios de dirección a 30 min (MQG–Charaque +0.01 a +0.07). Se descartó.
+6. **Viento fuerte (MQG ≥ 7 m/s, Charaque ≥ 4).** En S5, ya bien orientada, los westerlies fuertes
+   (vecinas a 250–290°) se leen del S (170–185°): el sitio nuevo desvía el viento del O hacia el S. En S4,
+   esos episodios corregidos con el espejo dan 154–210°, como S5; con un giro de 180° darían 311–7°.
+   El espejo resiste la prueba que tumbó la hipótesis en Chalsos, porque aquí la referencia es el mismo
+   sitio.
+
+**Límite del método.** La inversión del sentido de las transiciones prueba un espejo solo si se compara
+el mismo sitio (S4 frente a S5). Entre sitios distintos, una estación en la vertiente opuesta tiene el
+régimen al revés y también recorre la transición al revés (caso de Chalsos, abajo).
+
+**K se fija con la noche.** El drenaje nocturno llega del ENE en el sitio viejo y en el nuevo: frente a
+S5, K = 341–353°; frente a S0, 335–343°. El día no sirve de referencia: S0 es otro sitio (K ≈ 12°) y el
+día de S5 deriva (214° → 165°; K ≈ 316°), a ambos lados del valor nocturno. K semanal de noche en S4:
+321–357°, sin saltos. K por tramo: S2 ≈ 357°, S3 ≈ 294°, S4 ≈ 341° (± 10°). S1 (2025-07-14 → 09-15) no
+es corregible: dos semanas de transición y, del 18/08 al 14/09, una noche con K ≈ 0° y un día que no
+encaja.
+
+**Lo que cambia de lo anotado antes:**
+- El día «no comparable» de S4 era el espejo. Corregido viene de ~207°, a −31° de MQG, entre el sitio
+  viejo (+7°) y S5 (−56°). La hipótesis de un obstáculo pegado a la cara sur pierde su principal apoyo.
+- Las «reorientaciones» de −50° (S3) y +30° (S4) son cambios de K: el mástil se movió entre tramos.
+- La diferencia día−noche de ~28° frente a S5 no se resuelve. Puede ser el sitio en S5 (día que deriva).
+
+**Mecanismo, sin confirmar.** «Marca N hacia el sur» da por sí solo un giro de 180°, no un espejo. La
+foto del 2026-08-18 (en S4) muestra el WindSonic derecho en lo alto de su mástil, así que no estaba
+invertido. Queda el cálculo de la dirección: con la componente N–S de signo cambiado la salida es
+180° − x, y con la marca N en φ resulta K = φ + 180°. K = 341° da φ ≈ 161° (SSE), coherente con lo visto
+en campo. Pero antes del traslado no había espejo y tras la visita tampoco; si en la visita solo se
+hubiera girado el sensor, el espejo seguiría (K ≈ 180°). Algo más que la orientación cambió en el
+traslado y se deshizo en la visita (programa, configuración o la unidad). Preguntar a campo qué se hizo
+el 25/09 y pedir el programa del CR1000X anterior a la visita.
+
+**Propuesta, sin aplicar:** espejo en `corrections.db` (tipo nuevo `mirror`, por registro de 5 min y
+media vectorial) con K = 357° (S2), 294° (S3) y 341° (S4); fuera S1, la semana 2025-11-10 → 11-17 y la
+visita. `WIND_EXCLUDED` sigue sin cambios.
+
 ### Mina_Norte: viento desde el ClimaVUE (revisión del 2026-11-09)
 
-Mina_Norte sigue excluida entera en `WIND_EXCLUDED` (traslados del shelter sin fechar). Desde la
+Mina_Norte estaba excluida entera en `WIND_EXCLUDED` (traslados del shelter sin fechar). Desde la
 instalación del ClimaVUE (2026-08-28) hay 10 semanas completas de viento; dirección mediana por
 semana frente a Charaque, la vecina más cercana (2 km):
 
@@ -617,8 +729,224 @@ semana frente a Charaque, la vecina más cercana (2 km):
 Minas_Sur y Papujune siguen la misma forma (día 244–293° y 237–254°; noche 83–134° y 49–113°). No
 hay escalones semana a semana: no se detecta un traslado o giro posterior al 2026-08-28. El 0.62–0.78
 de día es compatible con un anemómetro a 4 m frente a torres a 10 m, no con un fallo. **El tramo
-desde 2026-08-28 es utilizable**; el anterior sigue sin fechar. Queda por decidir `WIND_EXCLUDED` →
-`[(None, "2026-08-28")]` (no aplicado) y confirmar con campo si el shelter se movió tras esa fecha.
+desde 2026-08-28 es utilizable**; el anterior quedó fechado el 2026-11-12 con Oeste 1 (ver abajo). Decidido el 2026-11-12:
+`WIND_EXCLUDED` → `[(None, "2025-11-14")]`, con el tramo B corregido (§6, §9). Falta confirmar con campo si el shelter se movió tras el 2026-08-28.
+
+### Mina_Norte frente a Oeste 1: tramos y orientación (2026-11-12, preliminar)
+
+**Datos.** Oeste 1 (Oizom Polludrone en CR800, `references/AAQ_Est_OESTE_1_Table1_Oizom.dat`, horario,
+2024-04 → hoy) está a 53–59 m de la coordenada corregida de Mina_Norte (§2). Solo su viento es
+utilizable: T y HR son constantes de relleno (20 °C, 40 %) y BP = 0. Su velocidad nunca baja de
+0.18 m/s y su dirección no sale de 15–326°: sin calmas y con el sector N deformado. En 2025 la base
+guarda T, HR y BP de Mina_Norte como 0: ese año solo hay viento y lluvia. Mapa de rosas por tramo
+con Charaque y MQG-15-02: `mina_norte_wind/mina_norte_roses.html` (`build_roses.py`; el mapa B+ lee la
+serie corregida de `met_corrected`).
+
+**Tramos de Mina_Norte** (día 10–17 h; horas con ambas ≥ 1 m/s):
+
+| Tramo | Periodo | Sitio y sensor | Dirección − Oeste 1 (mediana / IQR) | Velocidad / Oeste 1 | Velocidad / Charaque |
+|---|---|---|---|---|---|
+| A | 2025-01-01 → 2025-11-14 | punto del KMZ (327257, 8110014), WindSonic; sitio más expuesto (dato del usuario) | +6° / 37° | 1.42 | 0.92 |
+| B | 2025-11-26 → 2026-08-26 | junto a Oeste 1, WindSonic | **−51° / 16°** | 0.86 | 0.53 |
+| C | 2026-08-28 → hoy | junto a Oeste 1, ClimaVUE | −1° / 15° | 1.12 | 0.61 |
+
+La transición A → B es en dos pasos: dirección el 16/11/2025 (hueco de registro el 15/11, 11–16 h) y
+velocidad hacia el 25/11 (hueco el 25/11, 12–13 h). Encaja con el daño de paneles por rocas de
+noviembre de 2025 y un traslado posterior (dato del usuario; sin parte de campo: el registro de
+intervenciones empieza en 2026-02). En 2024 hubo otro tramo girado (2024-10-13 → 2024-12-21, −90° a
+−140°), sin analizar.
+
+**Quién está girada.** Diferencia de dirección de día por pares en A / B / C: los tres pares con Mina_Norte
+saltan unos −50° de A a B (MN−O1 −56°, MN−Charaque −50°, MN−MQG −48°) y vuelven en C; los tres pares sin
+ella cambian ≤ 7° (O1−Charaque −10°/−15°/+5°, O1−MQG +7°/+10°/+20°, Charaque−MQG +16°/+23°/+17°). Un giro
+por estación ajustado por mínimos cuadrados cuadra todos los pares con residuo de 2–3.5°. **La girada es
+Mina_Norte.** Las velocidades lo confirman: O1/Charaque se mantiene en 0.63–0.64 en A y B.
+
+**Lectura meteorológica.**
+- De día manda la capa límite convectiva (mezcla profunda, viento del valle y del oeste): coherente
+  a escala de kilómetros, así que es la franja que sirve para la orientación. Entre dos sensores a
+  55 m solo cabe un desfase instrumental.
+- El desfase es de error de orientación, no de flujo desviado por un obstáculo:
+  - es casi igual en los sectores con viento (180–315°: −48° a −55°);
+  - es estable mes a mes (−44° a −57°), aunque Oeste 1−Charaque cambia de −23° (nov–abr) a ~0° (may–ago)
+    con el cambio de régimen estacional;
+  - un obstáculo daría un desvío que depende del sector.
+- Depende algo de la velocidad (−43° con Oeste 1 a 1–2 m/s, −51° a 2–3, −53° a 3–4, −57° a 4–6). Con
+  viento flojo pesan más las circulaciones locales y la estela del shelter. La estimación robusta es la de
+  las horas bien ventiladas.
+- 51–53° no es un error típico de cableado (90°, 180°) ni la declinación magnética (unos −5°): es la marca N
+  del WindSonic mal alineada al reinstalarlo, coherente con un montaje tras el daño.
+- De noche manda el drenaje katabático: capa somera, de metros a decenas de metros, que sigue el
+  microrrelieve. Un shelter y paneles de 2–3 m junto a un sensor a 4 m quedan dentro de esa capa. La
+  velocidad nocturna de B correlaciona bien con la de Oeste 1 mes a mes (r 0.77–0.98), salvo en febrero
+  de 2026 (−0.06). Ese mes daba el r = 0.07 del tramo entero, así que no hay estela general. La gran dispersión de la dirección nocturna (IQR 123°), en cambio, era sobre todo
+  un artefacto: el 0/360 del sensor girado cae en el NE real, y la media aritmética mezclaba registros a
+  ambos lados. Con la reconstrucción vectorial baja a 36° (ver abajo).
+- La velocidad de día en B es un 13 % menor que en C respecto a Charaque (0.53 frente a 0.61; C es más
+  corto y estacional). Es compatible con una obstrucción parcial. No es corregible sin conocer la causa.
+
+**Corrección del tramo B: +53° a todas las horas, aplicada (2026-11-12).** El giro es del sensor y no
+depende de la hora del día. El valor sale del contraste por sectores B − C contra Oeste 1 (−53.6°, ver
+abajo), que sustituye a los +51° de la primera estimación; la incertidumbre es de ±5°. La calidad
+diferente de la noche se marca, no se resuelve dejando la noche sin girar. Sin datos de campo sobre la
+orientación, no hay forma de confirmarla mejor.
+
+**Aplicación en `corrections.db`** (§6; intervenciones de `corrections/registry.py`):
+
+| Intervención | Horas `(start, end]` | Qué hace | Horas |
+|---|---|---|---|
+| `MN-2025-11-transition` | 2025-11-14 → 2025-11-26 | dirección vacía: traslado, giro en dos pasos | 280 |
+| `MN-B-rotation` | 2025-11-26 → 2026-08-26 | +53°: 5 min + vector desde 2026-01-11; antes y en huecos, media horaria girada | 3865 + 1463 `north_risk` (5 min); 1126 + 4 `north_risk` (horaria) |
+| `MN-2026-08-sensor-swap` | 2026-08-26 → 2026-08-28 | dirección vacía: cable cortado y WindSonic retirado | 32 |
+
+- **5 min + vector:** cada registro se gira y la hora es la dirección media de vectores unitarios (Θ1)
+  de los registros con velocidad > 0, con ≥ 9 de 12 registros por hora. Los 5 min reproducen la base
+  horaria (diferencia mediana 0.02°, hora etiquetada al final del intervalo).
+- **Media horaria girada** (antes de 2026-01-11 y huecos de los 5 min): de noche conserva el artefacto de
+  la media aritmética.
+- **Marca `north_risk`:** algún registro de la hora, en el marco del sensor sin girar, a menos de 30° de
+  0/360. Ahí la media aritmética del logger pudo mezclar los dos lados del corte (350° y 10° dan 180°), y
+  girar no lo arregla. Es una detección parcial y amplia: marca el 43 % de las horas nocturnas, muchas
+  buenas, y no ve una mezcla que cae lejos del norte del sensor (cerca de 180° del sensor, unos 233°
+  reales). El clasificador de mezclas de `wind_vector/north_mixture.py` las separaría mejor.
+- En las ventanas excluidas la velocidad se conserva: es verosímil y el problema es solo de orientación.
+
+Diferencia con Oeste 1 en las horas con 5 min (ambas ≥ 1 m/s), desde `corrections.db`
+(`mina_norte_wind/validate_segment_b.py`); como referencia, el tramo C con ClimaVUE:
+
+| Serie | Día: mediana / IQR / % < 30° | Noche: mediana / IQR / % < 30° |
+|---|---|---|
+| B, cruda | −51° / 17° / 6 % | −63° / 121° / 15 % |
+| B, cruda girada +53 (media aritmética) | +2° / 17° / 95 % | −16° / 91° / 34 % |
+| B, corregida (5 min + vector) | +2° / 17° / 95 % | −29° / 36° / 40 % |
+| B, corregida, sin `north_risk` | +2° / 17° / 95 % | −25° / 27° / 44 % |
+| C, ClimaVUE, cruda | 0° / 15° / 99 % | −6° / 35° / 66 % |
+
+Día y noche por tramo frente a Oeste 1, leyendo `met_corrected` (todas las horas, ambas ≥ 1 m/s):
+
+| Tramo | Día: mediana / IQR / % < 30° | Noche: mediana / IQR / % < 30° |
+|---|---|---|
+| A | +6° / 37° / 75 % | −34° / 89° / 31 % |
+| B corregido | +2° / 17° / 95 % | −28° / 38° / 38 % |
+| B corregido, sin `north_risk` | +2° / 16° / 96 % | −25° / 40° / 41 % (705 de 1243 h) |
+| C | −1° / 15° / 99 % | −7° / 47° / 56 % |
+
+- **De día**, girar resuelve y el vector no añade nada, porque de día no se cruza el norte del sensor.
+- **De noche**, el vector deja la dispersión de B al nivel de C. Queda un desfase nocturno residual de
+  unos −18° a −20° respecto a C, que no desaparece al quitar las horas `north_risk` (−25°). Una parte
+  pueden ser mezclas que la marca no detecta; el resto es compatible con desvío del drenaje por el
+  shelter o los paneles, o con diferencias estacionales (C solo cubre sep–nov). No está resuelto.
+- **Velocidad de B:** de día ~13 % baja frente a C respecto a Charaque. De noche es coherente salvo en
+  febrero de 2026. Sin corregir.
+
+**Contraste sin tomar a Oeste 1 como patrón** (`mina_norte_wind/climavue_transition.py`). La referencia es
+la relación de Mina_Norte con cada vecina en C; el giro que la reproduce en B es este:
+
+| Contraste | Oeste 1 | Charaque | MQG |
+|---|---|---|---|
+| Agosto (B) frente a 28/08–22/09 (C), día | 53° | 58° | 60° |
+| Ídem, noche | 55° | 66° | 45° |
+| Barrido en todo B con 5 min, día (θ que anula el desvío) | ~51° | ~63° | ~60° |
+| Ídem, noche | ~74° | > 80° | ~74° |
+
+- **De día, el giro está entre 51° y 60°** según la referencia y el periodo. En el barrido, θ = 59° deja
+  las tres vecinas a ≤ 8°.
+- **De noche hace falta 20–40° más que de día, y lo dicen las tres vecinas.** Mes a mes, el desfase de
+  día frente a Oeste 1 es −44° a −56°. El de noche (5 min + vector) es −84° a −90° en ene–abr, −71° a −79°
+  en may–jul y −61° en agosto. En C la diferencia entre día y noche es de solo −10° a +6°.
+- **Un giro de compromiso no lo resuelve:** θ = 73° minimiza el error máximo (23°), pero deja el día a
+  +19° de Oeste 1.
+- **Contraste por sectores, B frente a C contra Oeste 1** (5 min + vector; ambas ≥ 1.5 m/s; sectores de
+  30° de Oeste 1). Cancela el sesgo propio de Oeste 1 en cada dirección y es el más limpio, porque
+  Charaque y MQG cambian ~25° con la estación respecto a Oeste 1:
+
+  | Sectores de Oeste 1 | B − C |
+  |---|---|
+  | 210–300° | −48° a −53° |
+  | 120–150° | −53° a −58° |
+  | 180° (pocas horas) | −66° |
+  | 0–90° | −72° a −103° |
+
+  En los sectores con `north_risk` < 50 %, la media ponderada es **−53.6°**.
+- **El exceso está solo en 0–90°**, donde cae el 0/360 del sensor girado (`north_risk` del 60–69 % de
+  las horas). Es el artefacto de la media aritmética dentro de cada registro de 5 min (`north_risk`, antes
+  llamada `riesgo_norte`), que la media vectorial horaria no puede deshacer. No es un efecto de flujo nocturno: la noche «pedía más giro»
+  porque sus vientos del E–NE caen en ese sector. Corrige lo anotado antes en esta sección.
+- **No es canalización del sitio B:**
+  - la rosa no se estrecha: desviación circular de día de 34° en Mina_Norte frente a 31° en Oeste 1, y
+    de 20° frente a 23° en C;
+  - el desfase es constante en 180° de sectores limpios.
+
+  Es lo contrario del tramo A, donde sí hay firma de canalización: rosa más estrecha que la de Oeste 1
+  (11° frente a 19° de día) y desfase que cambia con la dirección.
+- **Evolución:** el giro aparece la semana del 17/11/2025 (−29°, transición), es completo desde la del
+  24/11 (−55°) y se mantiene entre −39° y −60° semana a semana hasta agosto. Hay una deriva lenta de unos
+  −10° (−45° en ene–abr, −55° a −60° en jun–jul) que no se separa del cambio estacional de sectores.
+  Desaparece de golpe con el ClimaVUE (semana del 31/08: +2°). No hay agravamiento brusco ni
+  recuperación.
+- **Fotos de campo** (usuario, 2026-11-12: anemómetro orientado bien con un margen de 20–30°): no cuadran
+  con 53°. Pendiente saber la fecha de las fotos y la referencia usada (brújula, el shelter, el terreno).
+- **Agosto de 2026 no sirve como «justo antes» limpio.** El IQR horario frente a Oeste 1 sube a 25° de día
+  y a 97° de noche (13–17° y 25–50° en may–jul): el WindSonic ya se degradaba antes del cable cortado del
+  27/08. La velocidad, en cambio, es congruente a ambos lados (razón con Oeste 1 de 0.96–1.01 en B frente a
+  1.05–1.14 en C de día, y 0.97 frente a 0.92–0.95 de noche; r nocturno 0.98 y 0.97).
+- **Tramo A:** es otro sitio, 785 m al este y más expuesto. Es válido como dato, pero no homogéneo con
+  B y C: una serie climatológica de Mina_Norte debe tratarlo como emplazamiento distinto.
+
+**Encaje en los grupos de viento ya establecidos (verificación, 2026-11-12; `groups.py` sin cambios).**
+Se usaron los criterios de `grouping.py`: coseno entre ciclos diarios del vector de procedencia y
+diferencia de forma del ciclo de velocidad. El periodo es el de `groups.py` (2025-11-10 → 2026-11-10) y
+las vecinas se calculan en la misma ventana que Mina_Norte:
+
+| Ventana | Mina_Norte | Mejor grupo (cos medio / dif. ciclo vel.) | Segundo | Más parecidas |
+|---|---|---|---|---|
+| Año (B + C) | corregida | **G2** 0.95 / 0.15 | G1 0.80 | Tala-1 0.97, Alto_Tala 0.96, Cortadera 0.94, MQG 0.94 |
+| Año (B + C) | cruda | G3 0.88 / 0.22 | G2 0.77 | Chancado_primario 0.95, Apacheta 0.93 |
+| Tramo B | corregida | **G2** 0.91 / 0.15 | G1 0.71 | Tala-1 0.94, Alto_Tala 0.94, MQG 0.91 |
+| Tramo B | cruda | G3 0.79 / 0.22 | G5 0.53 | Chancado_primario 0.88, Apacheta 0.80 |
+| Tramo C (ClimaVUE, sin ajuste) | — | **G2** 0.91 / 0.18 | G1 0.87 | Charaque 0.98, Minas_Sur 0.97, Alto_Tala 0.96 |
+
+G2 está formado por Alto_Tala, Charaque, Cortadera, Papujune, Sarallenque_MQG-15-02 y Tala-1.
+- **Corregida, Mina_Norte entra en G2** y cumple los dos umbrales (cos ≥ 0.60, diferencia ≤ 0.25).
+- **El tramo C, que no lleva corrección, apunta al mismo grupo.** Es una confirmación independiente del
+  giro.
+- **Cruda, el giro la llevaba a G3** (Apacheta, Chancado_primario: régimen ajeno a 2–8 km).
+- **Al regenerar con tope 6, G2 se parte en dos** (§5): Mina_Norte queda con Alto_Tala y Tala-1, ambos
+  grupos con cos 0.97.
+
+**Para cerrar en campo:** fecha del traslado tras el daño de noviembre de 2025; orientación del WindSonic
+en B (si se alineó la marca N); posición del sensor respecto al shelter y a los paneles en B y en C.
+
+### Chalsos: régimen del sitio, no espejo (revisión del 2026-11-12)
+
+Se probó la hipótesis de espejo con las pruebas de Sarallenque y se descartó el mismo día. Base horaria
+(no hay 5 min de Chalsos); vecinas Cortadera (4 km, misma altitud), Apacheta, DME3_Cortadera,
+Cerro_Salviani y Calientes1.
+
+**Lo que parecía un espejo.** Ciclo diario al revés que sus vecinas: ~258° de noche y 112–150° de día,
+frente a ~98° y ~255° de Cortadera. Transiciones en sentido contrario (0 % en el mismo sentido) y mejor
+ajuste como espejo (constancia del ciclo 0.85–0.94 frente a 0.33–0.56 como giro), con K = 4–15° frente a
+Cortadera en todos los trimestres.
+
+**Por qué no lo es:**
+1. **Programa.** El del logger de Chalsos (`PMC3-Tripode_01 v4.2.CR300`, en `references/`) es idéntico al
+   de MQG-15-02, que funciona bien: solo difiere un byte posterior a `EndProg`. La dirección es la del
+   ClimaVUE por SDI-12 (`R7!`, `CVData(6)`), sin transformar. Charaque hace lo mismo (`WindDir=CV_WindDir`).
+2. **Viento fuerte.** Un espejo invierte a cualquier velocidad. En las 269 h con Cortadera ≥ 6 m/s (sobre
+   todo westerlies de jun–nov, de 10 a 16 h), Chalsos coincide con sus vecinas: Chalsos − Cortadera = +2°
+   de día (62 % a menos de 45°) y +7° de noche (79 %). Con K = 10°, un viento de 284° se leería como 86°.
+   Ejemplos: 2024-07-10 Cortadera 284°, Chalsos 283°, Calientes1 296°, Apacheta 288°; 2025-04-22: 299°,
+   296°, 283°, 283°. Control: Sarallenque S4, espejo conocido, no se alinea nunca con viento fuerte (4–13 %).
+3. **Terreno** (SRTM 30 m, anillos de 90 m a 3 km). Alrededor de Chalsos el terreno sube hacia el S–SO–O
+   (+68 a +92 m a 360 m entre 180° y 240°) y baja hacia una quebrada al E–ESE (−59 a −61 m entre 90° y
+   120°). El drenaje nocturno baja desde el OSO (265°) y el ascenso diurno sube desde la quebrada del ESE
+   (128°). Cortadera está en la otra vertiente: más alto al N–NE y más bajo al SO. Así se explica el
+   régimen al revés, y las transiciones al revés salen por fuerza, porque las dos pasan por el S.
+
+**Conclusión.** El sensor mide bien. Chalsos tiene un régimen de ladera propio, opuesto al de sus
+vecinas. `WIND_EXCLUDED["Chalsos"]` («dirección invertida, sin confirmar») ya no tiene motivo como fallo;
+pero si se quita, Chalsos seguirá sola en el agrupamiento por régimen, porque su ciclo no se parece al de
+ninguna. Decisión pendiente.
 
 ---
 
@@ -631,8 +959,11 @@ desde 2026-08-28 es utilizable**; el anterior sigue sin fechar. Queda por decidi
 - Confirmar con partes de campo los casos de §8 y la coordenada de Campamento Quellaveco.
 - Radiación solar: en pausa por decisión del usuario (2026-09-24); se sigue bien sin el visor.
 - Lluvia y UV: exploradas (§11); falta decidir figuras y QC antes de llevarlas al visor. Para los descartes de lluvia, esperar el historial de intervenciones.
-- Sarallenque (§9, revisión del 2026-11-09): (1) `WIND_EXCLUDED` se deja en `("2025-07-14", None)`: la dirección diurna tras la visita sigue −50° a −62° de MQG; (2) comparación con MQG hecha (noche resuelta, día no; la velocidad relativa bajó a 0.32 de día y 0.44 de noche); (3) pendiente de decidir: añadir en `stations.py` la corrección de +180° para la noche de 2025-11-17 → 2026-09-25 10:00 (queda a −4° de MQG), que hoy no puede aplicarse porque `WIND_EXCLUDED` no distingue franjas; (4) pedir visita: qué tapa o desvía el viento diurno (la dirección derivó de 214° a ~170° en seis semanas) y la ubicación anterior a julio de 2025.
-- Mina_Norte (revisión del 2026-11-09): hecha la regeneración de grupos (§5; entra sola) y el recálculo de `z_baro` (§2; se mantiene 3983). Su viento desde 2026-08-28 es estable y coherente con Charaque, Minas_Sur y Papujune (§9): decidir si `WIND_EXCLUDED["Mina_Norte"]` pasa a `[(None, "2026-08-28")]`. Sigue sin confirmar la coordenada (782 m del KMZ) y si el shelter se movió.
+- Sarallenque (§9, revisión del 2026-11-09): (1) `WIND_EXCLUDED` se deja en `("2025-07-14", None)`: la dirección diurna tras la visita sigue −50° a −62° de MQG; (2) comparación con MQG hecha (noche resuelta, día no; la velocidad relativa bajó a 0.32 de día y 0.44 de noche); (3) sustituido el 2026-11-12: no es un giro de +180° de noche sino un espejo día y noche (§9, «espejo, no giro»), con K = 357° / 294° / 341° en S2 / S3 / S4; pendiente de aplicar en `corrections.db` (tipo `mirror`); (4) preguntar a campo qué se hizo el 2026-09-25 (¿solo giro, o programa, configuración o unidad?) y pedir el programa del CR1000X anterior; (5) pedir visita: qué tapa o desvía el viento diurno (la dirección derivó de 214° a ~170° en seis semanas) y la ubicación anterior a julio de 2025.
+- Mina_Norte (revisión del 2026-11-09): hecha la regeneración de grupos (§5; entra sola) y el recálculo de `z_baro` (§2; se mantiene 3983). Su viento desde 2026-08-28 es estable y coherente con Charaque, Minas_Sur y Papujune (§9). Coordenada confirmada el 2026-11-12 (§2). Con Oeste 1 (§9, 2026-11-12) quedan tramos A/B/C fechados. La corrección del tramo B (+53°, día y noche, 5 min + vector desde 2026-01-11) y las dos ventanas sin dirección están aplicadas en `corrections.db`, y el visor las lee (§6). Ya está en el agrupamiento de viento, con Alto_Tala y Tala-1 (§5; `groups.py` regenerado el 2026-11-12). Falta entender el residuo nocturno de −20° y la velocidad nocturna de B. Sin datos de campo sobre la orientación ni la fecha del traslado (usuario, 2026-11-12).
+- Chalsos (§9, 2026-11-12): no es fallo, es el régimen de su ladera (descartado el espejo: programa idéntico al de MQG, coincide con sus vecinas con viento fuerte, terreno opuesto). Decidir si sale de `WIND_EXCLUDED`; en el agrupamiento quedaría sola.
+- Planta_Concentradora (§8): transiciones al revés, pero con viento fuerte se alinea con Papujune; más probable un cambio de sitio hacia 2024-04-06 que un espejo. Revisar con la prueba de viento fuerte por tramos y el terreno.
+- Torres giradas en septiembre de 2026 (§8): Cortadera (−73°), Alto_Quellaveco (−88°) y Alto_Tala (≈ −65°), probablemente calibraciones. Confirmar con los partes, decidir qué orientación es la buena (en Alto_Tala las vecinas no coinciden) y corregir o excluir: hoy entran en los grupos de viento.
 - Apacheta: la presión del ClimaVUE se congeló el 2025-12-23 (§8). Pedir en campo qué se tocó ese día y revisar el barómetro o la lectura SDI-12; mientras tanto el QC la descarta y la estación no entra en el ajuste de `z_baro`.
 - Camp_Quellaveco (viento, §8): excluida desde 2026-08-10. Pedir en campo la comprobación de la hélice (giro libre y tiempo de parada), del nivel de la base y del conector, y la medición de la orientación con brújula. Reabrir `WIND_EXCLUDED["Camp_Quellaveco"]` cuando se confirme la reparación, con la fecha de esa visita como fin del tramo.
 
