@@ -747,6 +747,37 @@ de `WIND_EXCLUDED` ni los giros de sep-2026 sin corregir. Salida: `output/congru
   DME3 19 %, Apacheta 63 %. Escalones visibles: Planta 2024-04, Sarallenque 2025-07/09/11, Papujune 2022-T3
   (−16° → −47°, la quincena ya fechada en §8; luego se recupera despacio hasta −8° en 2026-T4).
 
+### Prueba de flujo de valle-montaña (`valley_flow.py`, 2026-11-13)
+
+La prueba con la que se leyó Chalsos (§9), llevada a toda la red: régimen nocturno (0–6 h) y diurno (11–16 h)
+por resultante ponderada por velocidad; desnivel del terreno a barlovento (SRTM 30 m, mediana de siete cortes en
+±15°, a 0.5, 1 y 2.5 km); sentido de las transiciones del ciclo horario medio. Salida:
+`output/valle_montana.html` y `.csv`. Últimos 365 días (2025-11-13 → 2026-11-13).
+
+**Terreno (Δz a 1 km).** Un régimen térmico llega de noche desde más alto y de día desde más bajo:
+- **Cumplen las dos:** Altarani (+148 / −54 m), Alto_Tala (+125 / −88), Calacaja (+84 / −8), Calientes1 (+119 / −66),
+  DME3 (+108 / −157), Papujune (+91 / −233), Planta (+51 / −124), Tala-1 (+83 / −159); con desnivel nocturno
+  débil, Apacheta (+29 / −101), Alto_Quellaveco (+23 / −276; −238 a 2.5 km) y Chalsos (+22 / −140).
+- **Noche desde terreno más bajo:** Minas_Sur (−385 m), Cerro_Salviani (−253), Sarallenque_MQG (−55), Camp_Quellaveco
+  (−35, constancia 0.10: sin régimen nocturno), Cortadera (−33, pero +167 a 2.5 km: alto local, §9) y Mina_Norte
+  (−11, constancia 0.36). Minas_Sur y Cerro_Salviani tienen el terreno más bajo también de día (−124, −263): están en
+  lo alto, donde no llega drenaje desde más arriba; de noche les llega el flujo de la zona.
+- **Día desde terreno más alto:** **Chancado_primario** (de 216°, +341 m a 1 km y +426 a 2.5 km; de noche +166, de
+  111°), Tala_Legal (−59 a 0.5 km, +62 a 1 km, +407 a 2.5 km), Charaque (−51 / +45 / −46, mixto) y Camp_Quellaveco (+7).
+  Chancado es el único con el día claramente cuesta abajo; sin explicar (¿encauzamiento por un valle que gira, o
+  terreno cambiado por la mina?).
+- **Sin relieve que mande:** Huachunta, Titire y Vizcachas (altiplano, |Δz| ≤ 16 m a 1 km, día y noche a 32–120°) e
+  Ilo (costa). Dique_pie_botadero: día y noche del O (a 21°), lo ya visto en §8.
+
+**Transiciones: no concluyente a escala de red.** Con vecinas a ≤ 10 km, el mismo sentido aparece en el 36–55 % de
+los casos en casi todas, también entre estaciones sanas: un radio de 10 km mezcla valles y vertientes, y en muchas
+el ciclo medio salta 150–180° entre dos horas (sentido ambiguo; se deja en blanco). Sirvió en Chalsos porque se
+comparó un par concreto con direcciones vectoriales y la trayectoria hora a hora.
+
+**Límites.** El SRTM es de 2000: no ve el tajo, los botaderos ni las plataformas (relevante en la zona Mina). Las
+estaciones con `WindDir_Avg` se desvían cuando la hora cruza el N. Un incumplimiento no es por sí un fallo: describe
+el sitio (cumbre, quebrada, flujo regional).
+
 ### Mina_Norte: viento desde el ClimaVUE (revisión del 2026-11-09)
 
 Mina_Norte estaba excluida entera en `WIND_EXCLUDED` (traslados del shelter sin fechar). Desde la
