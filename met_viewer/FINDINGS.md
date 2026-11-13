@@ -406,7 +406,7 @@ rugosidad que no se conoce).
 | Camp_Quellaveco | T | mismo ciclo diario que Charaque, pero la diferencia mensual salta entre ~+0.4 y −3 °C (dic-2024 → feb-2026) y sube a +1.5 desde mar-2026 | cambios de calibración o de sensor; el QC no detecta escalones en T |
 | Chancado_primario | T | +2.2 a +2.6 °C de día respecto a sus vecinas, igual de noche; amplitud diaria de ~10 °C (2025) a 14–15 °C (jun–jul 2026) | radiación sobre el sensor (protector solar), empeorando |
 | Dique_pie_botadero | viento | (1) desde 2024-T2, 0–0.5 % de las horas con viento de la mitad este (NNE–SSO), de día y de noche, cuando Tala-1 (0.5 km), Alto_Tala y Papujune reciben de noche el 51–83 % del NE–ENE; la dirección solo recorre 260°–278° en el día (Tala-1: 65° → 261°). (2) Nunca en calma: percentil 1 de 1.5–2.3 m/s, frente a un 3–32 % de calmas nocturnas en las vecinas. (3) El 2026-07-27 la velocidad de día baja de ~5 a ~2.3 m/s (Tala-1 sigue en 4–6), la de noche sube de ~4 a ~5.4 y su dirección pasa de ~300° a 271–274°: el ciclo invertido empieza ahí, antes el día doblaba a la noche. DEM (SRTM, anterior al botadero): cañón con horizonte de 35–42° hacia SE–S y abierto al OSO (247°, 1°) y, menos, al ENE (12°) | exposición: ClimaVUE ~2 m junto al shelter y a la ladera (dato del usuario, 2026-09-24); el sector este tapado o el flujo encauzado por el cañón y el botadero; qué cambió el 2026-07-27 está por confirmar en campo |
-| Chalsos | dirección | ~270° de noche y 120–160° de día, al revés que Calientes1/Cortadera/Tala_Legal (~100° / ~270°) | **No es fallo: es el régimen del sitio** (revisión del 2026-11-12, §9). En los episodios de viento fuerte coincide con sus vecinas (+2° de día, +7° de noche con Cortadera), y su terreno sube hacia el S–SO–O con una quebrada al E–ESE. Su programa es idéntico al de MQG-15-02 (`PMC3-Tripode_01 v4.2`), con la dirección tal cual la da el ClimaVUE. Se descartó la hipótesis de espejo, registrada antes ese mismo día |
+| Chalsos | dirección | ~270° de noche y 120–160° de día, al revés que Calientes1/Cortadera/Tala_Legal (~100° / ~270°) | **No es fallo: es el régimen del sitio** (revisión del 2026-11-12, §9). En los episodios de viento fuerte coincide con sus vecinas (+2° de día, +7° de noche con Cortadera), y está en una divisoria, en la cabecera de una quebrada que drena al ESE y luego al S (corregido el 2026-11-13, §9). Su programa es idéntico al de MQG-15-02 (`PMC3-Tripode_01 v4.2`), con la dirección tal cual la da el ClimaVUE. Se descartó la hipótesis de espejo, registrada antes ese mismo día |
 | Huachunta | dirección | veleta pegada en ~152° (mar–may 2026); constancia direccional = 1.00 | fallo mecánico |
 | Sarallenque | viento | desde 2025-07-14 dirección y velocidad cambian a la vez; de noche viene de ~250° en vez de ~78°; sector S–SO–O vacío. Reorientado el 2026-09-25 (marca N al norte; antes al sur) y shelter desplazado unos metros al E | confirmado en campo: sensor orientado al sur (180°). Revisado el 2026-11-12 (§9): de 2025-09-15 a 2026-09-25 la dirección es un **espejo** (real = K − lectura), no un giro; con él cuadran día y noche sin necesidad de un obstáculo en la cara sur |
 | Apacheta | presión | el barómetro del ClimaVUE (integrado) dejó de actualizarse el **2025-12-23 por la tarde** (en la base horaria hay 11 cambios en las 20 h de ese día y ninguno al siguiente; el `.dat` de 5 min tiene un hueco del 2025-11-01 al 12-23, así que la hora exacta, ~17:00, se apoya en solo 1.5 h de 5 min). Antes cambiaba en el 31–35 % de los registros de 5 min a cualquier temperatura (≈ 22 cambios al día en los datos horarios, como Papujune); desde 2026-01-20 cambia en ≤ 3 % (0 % con T ≤ 5 °C; casi todos los cambios caen entre 7 y 17 h) y, en horario, 0.3–3.1 cambios al día según el mes (ene–abr 1.9–3.1; mayo–nov 0.3–1.3). Los valores retenidos siguen centrados: Apacheta − Papujune ≈ +2 hPa antes y después, pero el desvío pasa de 0.15 a 0.8–1.4 hPa (la presión real varía ~1–2 hPa al día). T, HR y batería del mismo logger siguen normales. Del 2026-01-01 al 01-05 hubo cambios de nuevo (12, 11, 7, 5 al día) justo antes de un hueco de datos (01-06 → 01-11). Persistió tras la limpieza y reinicio físico del 2026-05-20 y el mantenimiento del ClimaVUE del 2026-06-03 (`intervenciones_meteorologia.csv`). Antes de 2021-05 son registros en cero (§4) | fallo del barómetro del ClimaVUE (o de su lectura por SDI-12): mide, pero devuelve casi siempre el mismo valor. El QC lo descarta por `STUCK` (≈ 672 h cada 30 días); por eso Apacheta queda fuera de `calibrate_baro.py` (< 30 días válidos). Coincide en fecha con el cambio de nivel de su HR (ene-2026, fila siguiente) y con el mes del pluviómetro Young (dic-2025, `stations.py`); qué se tocó el 2025-12-23 está por confirmar en campo |
@@ -421,7 +421,7 @@ rugosidad que no se conoce).
 | Cortadera | dirección | desde 2026-09-13 13:00 (faltan 11 y 12 h): giro rígido de −73° ± 4°, igual de día y de noche (−74° / −71° frente a Calientes1; seis vecinas coinciden) | visita de campo; se restituye sumando +73°. Fuente: `wind_vector/consensus/audit/r2` |
 | Alto_Quellaveco | dirección | desde 2026-09-15 12:00 (falta 11 h): giro rígido de −88° ± 5° (−85° / −94° frente a Minas_Sur, día / noche) | visita de campo; se restituye sumando +88° |
 | Alto_Tala | dirección | desde 2026-09-24 (transición el 24 y el 25; estable desde el 26): giro rígido de unos −65°, igual de día y de noche (Tala-1 −64° / −65°, Tala_Legal −71° / −58°, Calientes1 −77° / −72°; mediana diaria de la diferencia, ambas ≥ 1 m/s). Detectado el 2026-11-12 | calibración en campo (hipótesis del usuario). Cuál orientación es la buena está sin decidir: frente a Tala-1 la nueva queda más cerca (antes +38° / +64°, después −26° / −2°), frente a Tala_Legal y Calientes1 la anterior (+6° / +19° y +27° / +25°) |
-| Cortadera | dirección nocturna | desde sep-2022 las noches en 90–135° pasan de 0–2 % a 46–71 % (53–65 % desde 2023); antes el 84 % caía en 45–90° | cambio de sitio o de orientación sin fechar con exactitud; sin confirmar |
+| Cortadera | dirección nocturna | desde sep-2022 las noches en 90–135° pasan de 0–2 % a 46–71 % (53–65 % desde 2023); antes el 84 % caía en 45–90°. Fechado el 2026-11-13 con D1 por quincenas: el cambio es en la **segunda quincena de 2022-09** y afecta también al día (resultante diurna 224–236° → 249–263°; nocturna 57–75° → 84–102°), estable desde entonces. Coincide con el fin de los escalones de presión de Cortadera (§4). En la misma quincena Papujune gira en sentido contrario (día 235–259° en ene–ago 2022 → 207–239° desde la segunda quincena de sep) y el 2022-10-06 se reubica Camp_Quellaveco | cambio de sitio (la presión lo apoya) o de orientación; tres estaciones en tres semanas sugieren una campaña de campo. Pedir partes de sep–oct 2022 de Cortadera y Papujune |
 | Altarani | dirección nocturna | ene–mar 2025: noches en 90–180° al 52 %, 0 % y 17 % (resto de meses 92–98 %); en feb-2025 la noche viene de ~288° | fallo o giro temporal no documentado; fuera del periodo del consenso |
 | Planta_Concentradora | dirección | desde 2024-04-06: de día +73° respecto a Papujune y de noche −9°; coseno del ciclo diario con las vecinas −0.15 a 0.44 (antes 0.77–0.95) | cambio de orientación o de sitio; no es un giro único (signos opuestos día/noche). Cifras de la revisión externa, sin verificar por separado. Cribado del 2026-11-12 (2025-11 → 2026-11): transiciones del ciclo diario al revés que sus cinco vecinas y mejor ajuste como espejo con 4 de 5. Esa firma no basta (ver Chalsos, §9): con viento fuerte de Papujune (5–6 m/s, 56–80 h) se alinea con ella en el 76–80 % de las horas, lo que apunta a un régimen de sitio (¿traslado en 2024-04?) más que a un espejo. Sin cerrar |
 | Camp_Quellaveco | dirección nocturna | en horas con > 1 m/s la noche no tiene dirección dominante desde el 2022-10-06 (constancia 0.05–0.20, antes 0.84–0.92), repartida en los cuatro cuadrantes | sitio, no anemómetro: el punto nuevo es turbulento de noche (`audit/r2`); complementa la fila de la reubicación |
@@ -917,16 +917,18 @@ G2 está formado por Alto_Tala, Charaque, Cortadera, Papujune, Sarallenque_MQG-1
 **Para cerrar en campo:** fecha del traslado tras el daño de noviembre de 2025; orientación del WindSonic
 en B (si se alineó la marca N); posición del sensor respecto al shelter y a los paneles en B y en C.
 
-### Chalsos: régimen del sitio, no espejo (revisión del 2026-11-12)
+### Chalsos: régimen del sitio, no espejo (revisión del 2026-11-12; corregida el 2026-11-13)
 
-Se probó la hipótesis de espejo con las pruebas de Sarallenque y se descartó el mismo día. Base horaria
-(no hay 5 min de Chalsos); vecinas Cortadera (4 km, misma altitud), Apacheta, DME3_Cortadera,
-Cerro_Salviani y Calientes1.
+Se probó la hipótesis de espejo con las pruebas de Sarallenque y se descartó el mismo día. La primera
+revisión usó la base horaria; la del 2026-11-13 (más abajo) rehace el análisis con direcciones
+vectoriales y sustituye la lectura del terreno (punto 3) y la de las transiciones.
 
 **Lo que parecía un espejo.** Ciclo diario al revés que sus vecinas: ~258° de noche y 112–150° de día,
 frente a ~98° y ~255° de Cortadera. Transiciones en sentido contrario (0 % en el mismo sentido) y mejor
 ajuste como espejo (constancia del ciclo 0.85–0.94 frente a 0.33–0.56 como giro), con K = 4–15° frente a
-Cortadera en todos los trimestres.
+Cortadera en todos los trimestres. **Corrección del 2026-11-13:** esas cifras salen de `WindDir_Avg`, que es
+un promedio aritmético de ángulos; las transiciones «al revés» y el paso de las dos por el S eran en parte
+un artefacto de ese promedio (ver abajo).
 
 **Por qué no lo es:**
 1. **Programa.** El del logger de Chalsos (`PMC3-Tripode_01 v4.2.CR300`, en `references/`) es idéntico al
@@ -937,16 +939,81 @@ Cortadera en todos los trimestres.
    de día (62 % a menos de 45°) y +7° de noche (79 %). Con K = 10°, un viento de 284° se leería como 86°.
    Ejemplos: 2024-07-10 Cortadera 284°, Chalsos 283°, Calientes1 296°, Apacheta 288°; 2025-04-22: 299°,
    296°, 283°, 283°. Control: Sarallenque S4, espejo conocido, no se alinea nunca con viento fuerte (4–13 %).
-3. **Terreno** (SRTM 30 m, anillos de 90 m a 3 km). Alrededor de Chalsos el terreno sube hacia el S–SO–O
-   (+68 a +92 m a 360 m entre 180° y 240°) y baja hacia una quebrada al E–ESE (−59 a −61 m entre 90° y
-   120°). El drenaje nocturno baja desde el OSO (265°) y el ascenso diurno sube desde la quebrada del ESE
-   (128°). Cortadera está en la otra vertiente: más alto al N–NE y más bajo al SO. Así se explica el
-   régimen al revés, y las transiciones al revés salen por fuerza, porque las dos pasan por el S.
+3. **Terreno.** ~~Sube hacia el S–SO–O y baja a una quebrada al E–ESE; drenaje nocturno desde el OSO y
+   ascenso diurno desde el ESE.~~ Sustituido el 2026-11-13: esa lectura (anillos de 16 direcciones) no
+   cuadraba con el relieve; la nueva está abajo.
 
-**Conclusión.** El sensor mide bien. Chalsos tiene un régimen de ladera propio, opuesto al de sus
-vecinas. `WIND_EXCLUDED["Chalsos"]` («dirección invertida, sin confirmar») ya no tiene motivo como fallo;
-pero si se quita, Chalsos seguirá sola en el agrupamiento por régimen, porque su ciclo no se parece al de
-ninguna. Decisión pendiente.
+#### Revisión del 2026-11-13: direcciones vectoriales, divisoria y embalse
+
+**Dirección vectorial.** `WindDir_Avg` sale de `Average(1,WindDir,…)` en los dos loggers (línea 115 del
+programa de Chalsos, línea 140 del de Cortadera): si en la hora el viento cruza el N, el valor cae hacia
+180° (`wind_vector/INFORME.md`). Medido en Cortadera, que guarda también `WindDir_D1_WVT` (2024-03 →
+2026-09, ≥ 0.5 m/s): el aritmético se aleja > 45° del vectorial en el 16–28 % de las horas de 18–22 h, ~10 %
+de noche y < 1 % a mediodía; la noche aritmética queda +10–15° desviada (99° frente a 83–90°). Chalsos se
+reconstruyó desde su Table3 de 5 min (`references/AAQ_Est_Chalsos_CR310_Table3.dat`, 2024-03-06 → hoy) con
+`wind_vector/north_mixture.py` en la configuración de la validación externa (σ y etapas 1 y 2 entrenadas
+con cortadera, papujune y quellaveco): 22 813 h, 3.9 % de registros de 5 min corregidos, 7.1 % de horas
+con más de 30° de cambio frente a la media simple de los 5 min. En Chalsos el aritmético horario se aleja
+> 45° del reconstruido en el 22–36 % de las horas de 7–9 h. La reconstrucción está en `wind_vector/rescue.py`
+y entra en `met_corrected` como `CH-vector-rescue` (22 809 h; 3 521 con marca `north_mixture`). Solo cubre lo
+que hay en el Table3: las horas posteriores llegan con el `WindDir_Avg` del logger. Con solo el dato horario,
+un modelo entrenado con la historia reconstruida de Chalsos baja el error de la media mensual de 21° a 11°,
+pero no sirve hora a hora (`wind_vector/INFORME.md` §3.9).
+
+**Regímenes** (2024-03-06 → 2026-09-13, 21 225 h comunes; resultante ponderada por velocidad y sector
+modal; el periodo acaba antes del giro de Cortadera del 2026-09-13):
+
+| | Noche (0–6 h) | Día (11–16 h) | Transición de la mañana | Transición de la tarde |
+|---|---|---|---|---|
+| Cortadera (D1) | 89°, constancia 0.82; modal E 49 % | 258°, 0.97; modal OSO 59 % | sin dirección definida (8 h: constancia 0.04) | O → **N** → E (18–21 h: 276°, 302°, 19°, 63°) |
+| Chalsos (reconstruida) | 268°, 0.75; modal O–ONO 32 % | 113°, 0.55; modal ESE 40 % | O → **N** → E (7–9 h: 296°, 46°, 94°) | E → **S** → O (18–21 h: 121°, 148°, 236°, 259°) |
+
+Por la tarde las dos giran en sentido horario; un espejo invertiría el sentido. Con direcciones vectoriales,
+la prueba del viento fuerte se mantiene: con Cortadera a 6–8 m/s, Chalsos coincide (< 45°) en el 50 % de
+las horas frente al 26 % del espejo; con ≥ 8 m/s, en 9 de 10 (n = 10). Por debajo de 6 m/s gana el espejo
+(53–76 %), porque los regímenes estables son opuestos en el eje E–O. Las 282 h fuertes: 82 % de 11 a 15 h,
+82 % con Cortadera de 230–300°, 60 % de agosto a noviembre.
+
+**Térmico, no mecánico.** De 11 a 15 h, con la velocidad de Cortadera fija, la fracción de horas de Chalsos
+del ESE (80–170°) sube con la radiación global de Cortadera (0–4 m/s: 67 → 87 %; 4–6 m/s: 49 → 80 %), y su
+velocidad mediana también (2.1 → 3.0 y 2.4 → 3.4 m/s); con la radiación fija, más westerly reduce el ESE.
+Un remolino de sotavento crecería con el westerly. El componente diurno del ONO–NO (8–19 % de las horas)
+aparece con westerly fuerte y poca radiación (Cortadera 5–7 m/s y < 600 W/m²: 55 %; ≥ 900 W/m²: 17 %;
+Cortadera 3–5 m/s y ≥ 900 W/m²: 6 %) y en junio y agosto (30 %): es el flujo regional que cruza la
+divisoria cuando el viento de valle se debilita.
+
+**Terreno** (SRTM 30 m; cortes por la resultante de cada régimen, mediana de siete cortes a ±15°; drenaje
+D8 en rejilla de 120 m). La pendiente de los primeros 30–720 m sube hacia el SSO (~210°, 9–20 %), pero
+ningún régimen la sigue. Chalsos está en una **divisoria**: el agua que cae en la estación va al ESE y luego
+al S, a una quebrada que baja 489 m en 3.6 km; a 300 m al O–NO va a la otra cuenca, la del embalse.
+- Día (de 113°): llega subiendo desde la quebrada (−56 m a 240 m, −146 m a 1 km, banda −187 a −117) y tras la
+  estación baja un poco (−48 m a 1 km). Es el viento de valle de la quebrada, que cruza la divisoria; no va
+  hacia terreno más alto. El arranque (8–9 h) coincide con el calentamiento de las laderas que miran al E
+  (dato del usuario), pero el régimen dura hasta las 18 h (65–86 % de las horas de 10 a 18 h).
+- Noche (de 268°): llega desde terreno más alto a 1–1.5 km al O (+35 y +124 m) y baja hacia el E, a la
+  cabecera de la quebrada (−61 m a 1 km; banda −128 a −6). Hipótesis: sigue el relieve kilométrico, no el
+  del lomo; ajusta peor (tramos casi llanos en la banda) y un tercio de las noches viene del ONO–NO, hacia
+  donde el terreno baja.
+- Cortadera está en un alto local (más bajo en todas las direcciones hasta 1 km) y sigue la pendiente
+  regional (sube a 50°, 60 m/km): de noche llega desde terreno +196 m más alto a 2.5 km; de día va hacia
+  terreno +255 m más alto a 2.5 km.
+
+**Embalse** (comentario, no determinante). Situado con una captura de Google Earth del usuario (unos 1 km²;
+la imagen más antigua es de agosto de 2022, ya con agua, más pequeño): brazo NE a 0.9 km de Cortadera
+(rumbo 231°, el valle baja 190 m), brazo SE a 2.6 km de Chalsos (307°, baja 176 m). Cortadera: de día el
+viento sale del lado del embalse y de noche va hacia él, como un viento de valle con o sin agua. Chalsos,
+al revés: de día va hacia el embalse y de noche viene de su lado, y la brisa de tierra (del SE de noche) solo
+aparece en el 3.8 % de las noches. No hay antes y después medible: Chalsos empieza en 2024-03, y Cortadera
+cambia de régimen en la segunda quincena de 2022-09 por otra causa (§8). Del 2023 al 2026, mientras el
+embalse crece, el régimen de Cortadera no cambia (día 256–264°, noche 87–92°, velocidad diurna 1.59–1.64
+veces la de Papujune).
+
+**Conclusión.** El sensor mide bien. Chalsos tiene el régimen de su divisoria, dominado por la quebrada del
+SE, opuesto al de sus vecinas. `WIND_EXCLUDED["Chalsos"]` («dirección invertida, sin confirmar») ya no tiene
+motivo como fallo; pero si se quita, Chalsos seguirá sola en el agrupamiento por régimen, porque su ciclo no
+se parece al de ninguna. Para un uso de la dirección, mejor la serie reconstruida que `WindDir_Avg`.
+**Decisión (usuario, 2026-11-13):** Chalsos sigue por su cuenta, fuera del agrupamiento de viento;
+`WIND_EXCLUDED` se mantiene con el motivo actualizado (régimen del sitio, no fallo).
 
 ---
 
@@ -961,7 +1028,8 @@ ninguna. Decisión pendiente.
 - Lluvia y UV: exploradas (§11); falta decidir figuras y QC antes de llevarlas al visor. Para los descartes de lluvia, esperar el historial de intervenciones.
 - Sarallenque (§9, revisión del 2026-11-09): (1) `WIND_EXCLUDED` se deja en `("2025-07-14", None)`: la dirección diurna tras la visita sigue −50° a −62° de MQG; (2) comparación con MQG hecha (noche resuelta, día no; la velocidad relativa bajó a 0.32 de día y 0.44 de noche); (3) sustituido el 2026-11-12: no es un giro de +180° de noche sino un espejo día y noche (§9, «espejo, no giro»), con K = 357° / 294° / 341° en S2 / S3 / S4; pendiente de aplicar en `corrections.db` (tipo `mirror`); (4) preguntar a campo qué se hizo el 2026-09-25 (¿solo giro, o programa, configuración o unidad?) y pedir el programa del CR1000X anterior; (5) pedir visita: qué tapa o desvía el viento diurno (la dirección derivó de 214° a ~170° en seis semanas) y la ubicación anterior a julio de 2025.
 - Mina_Norte (revisión del 2026-11-09): hecha la regeneración de grupos (§5; entra sola) y el recálculo de `z_baro` (§2; se mantiene 3983). Su viento desde 2026-08-28 es estable y coherente con Charaque, Minas_Sur y Papujune (§9). Coordenada confirmada el 2026-11-12 (§2). Con Oeste 1 (§9, 2026-11-12) quedan tramos A/B/C fechados. La corrección del tramo B (+53°, día y noche, 5 min + vector desde 2026-01-11) y las dos ventanas sin dirección están aplicadas en `corrections.db`, y el visor las lee (§6). Ya está en el agrupamiento de viento, con Alto_Tala y Tala-1 (§5; `groups.py` regenerado el 2026-11-12). Falta entender el residuo nocturno de −20° y la velocidad nocturna de B. Sin datos de campo sobre la orientación ni la fecha del traslado (usuario, 2026-11-12).
-- Chalsos (§9, 2026-11-12): no es fallo, es el régimen de su ladera (descartado el espejo: programa idéntico al de MQG, coincide con sus vecinas con viento fuerte, terreno opuesto). Decidir si sale de `WIND_EXCLUDED`; en el agrupamiento quedaría sola.
+- Chalsos (§9, 2026-11-12, corregido el 2026-11-13): no es fallo, es el régimen de su divisoria (descartado el espejo: programa idéntico al de MQG, coincide con Cortadera con viento fuerte, por la tarde gira en el mismo sentido, el ESE diurno depende de la radiación). Cerrado el 2026-11-13: sigue en `WIND_EXCLUDED` por decisión del usuario (va sola) y su dirección reconstruida desde 5 min está en `corrections.db`. Abierto: `CH-vector-rescue` tiene el fin abierto, pero solo hay reconstrucción hasta 2026-11-13 11:00; con un Table3 nuevo hay que rehacer `wind_vector.rescue` y `build_corrections`.
+- Cortadera y Papujune (§8): cambio de dirección en la segunda quincena de 2022-09; pedir partes de campo.
 - Planta_Concentradora (§8): transiciones al revés, pero con viento fuerte se alinea con Papujune; más probable un cambio de sitio hacia 2024-04-06 que un espejo. Revisar con la prueba de viento fuerte por tramos y el terreno.
 - Torres giradas en septiembre de 2026 (§8): Cortadera (−73°), Alto_Quellaveco (−88°) y Alto_Tala (≈ −65°), probablemente calibraciones. Confirmar con los partes, decidir qué orientación es la buena (en Alto_Tala las vecinas no coinciden) y corregir o excluir: hoy entran en los grupos de viento.
 - Apacheta: la presión del ClimaVUE se congeló el 2025-12-23 (§8). Pedir en campo qué se tocó ese día y revisar el barómetro o la lectura SDI-12; mientras tanto el QC la descarta y la estación no entra en el ajuste de `z_baro`.

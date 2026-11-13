@@ -140,7 +140,7 @@ WIND_EXCLUDED: dict[str, list[tuple[str | None, str | None]]] = {
     "Huachunta": [("2026-02-26", "2026-05-25")],   # veleta pegada en ~152°
     "Sarallenque": [("2025-07-14", None)],          # traslado del shelter, girado ~180°, sector S–O tapado
     "Mina_Norte": [(None, "2025-11-14")],           # tramo A y anteriores: otro sitio (punto del KMZ). B corregido y C en corrections.db (FINDINGS §9)
-    "Chalsos": [(None, None)],                      # dirección invertida respecto a sus vecinas, sin confirmar
+    "Chalsos": [(None, None)],                      # no es fallo: régimen de su divisoria, opuesto al de sus vecinas (FINDINGS §9); va sola por decisión del usuario
 }
 
 

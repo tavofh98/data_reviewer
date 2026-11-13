@@ -195,6 +195,45 @@ Error medio por hora (grados) frente al Θ1 del logger; entre paréntesis, % de 
 - Solo se validó entre estas tres estaciones CR1000X de la misma zona. Papujune, con más viento del norte que las otras dos, es la que peor resulta. En una estación con otro clima, el error puede ser mayor.
 - El método necesita los `WindDir_Avg` de 5 min. No se comprobó que las estaciones del tercer grupo de la sección 4 los tengan con todo su histórico.
 
+**Aplicación.** `wind_vector/rescue.py` reconstruye con esta configuración la serie horaria de una estación sin `D1` desde su Table3 (hoy, Chalsos: `output/rescue_chalsos.csv.gz`, 2024-03-06 → 2026-11-13). `corrections/` la lleva a `met_corrected` (intervención `CH-vector-rescue`).
+
+### 3.9 Solo con el dato horario (2026-11-13)
+
+Los 5 min no llegan de forma rutinaria y el formato de los loggers no se puede cambiar, así que se midió cuánto se recupera solo con lo que guarda Chalsos en la base horaria: `WindDir_Avg` y `WS_ms_Avg` (sin racha ni `SD1`).
+
+**Recuperar Θ1 exacto desde el horario es imposible.** Muestras repartidas entre 350° y 10° dan media aritmética 180° y Θ1 = 0°; todas en 180° dan 180° y 180°. Con la misma velocidad, los mismos datos de entrada tienen dos respuestas correctas. Lo que sigue son estimaciones.
+
+**Hipótesis** (mismo modelo físico y clasificador de 3.8, aplicados a la hora; vecinas = horas vecinas; más el mes del año). Verdad: `WindDir_D1_WVT_h`. Prueba: el 40 % final de cada serie.
+- H1, transferencia: entrenado con las otras dos estaciones.
+- H2, abstención: como H1, pero solo se corrige si P(mezcla) > 0.7 o 0.9.
+- H3, contexto espacial: H1 más la `D1` horaria de las otras estaciones en la misma hora.
+- H4, historia propia: entrenado con el 60 % inicial de la misma estación.
+- H6, regresión directa de (sen, cos) de `D1` con historia propia.
+- Techo: elección perfecta entre A y μ con la σ real.
+
+Error medio en grados por hora y, entre paréntesis, de la media circular mensual (meses con ≥ 80 % de horas):
+
+| Estación | Avg horario | H1 | H3 | **H4** | H6 | Techo |
+|---|---|---|---|---|---|---|
+| Cortadera | 13.4 (58.8) | 11.4 (14.6) | 11.2 (15.9) | **8.6 (7.5)** | 9.1 (9.2) | 5.0 (5.1) |
+| Papujune | 28.1 (73.4) | 20.3 (22.9) | 19.6 (24.3) | **17.9 (9.5)** | 18.3 (8.8) | 9.1 (3.6) |
+| Quellaveco | 18.6 (33.9) | 18.3 (18.3) | 17.1 (18.6) | **14.0 (8.2)** | 14.4 (9.4) | 4.9 (2.6) |
+
+- La historia propia gana: cada sitio tiene su climatología del norte. La media mensual baja de 34–73° a 8–10°; por hora el error queda en 9–18° y en Papujune y Quellaveco sube en las horas sin viento del norte (10.7 → 15.4°, 5.8 → 10.6°).
+- La abstención solo mejora la hora en Quellaveco y empeora el mes en las tres; el contexto espacial casi no cambia nada.
+- Funciona en el agregado porque estima bien la proporción de horas con viento del norte, no cada hora.
+
+**Chalsos** (H4 con el 60 % inicial de su reconstrucción de 5 min como etiqueta, 2024-03-06 → 2025-10-29, 13 684 h; prueba 2025-10-29 → 2026-11-13, 9 125 h, 5.3 % con viento del norte; la referencia es la reconstrucción, no un `D1`):
+
+| Método | Por hora | Norte | Resto | % > 30° | Mes (media) | Mes (peor) |
+|---|---|---|---|---|---|---|
+| Avg horario | 12.8 | 99.5 | 7.9 | 12.6 | 21.1 | 36.6 |
+| H1 transferencia | 17.4 | 73.6 | 14.3 | 16.9 | 13.6 | 90.4 |
+| H4 historia propia | 10.3 | 57.9 | 7.7 | 10.0 | 11.1 | 17.2 |
+| Techo | 7.0 | 13.5 | 6.6 | 7.1 | 7.6 | 13.7 |
+
+Con historia propia la media mensual baja a la mitad sin empeorar las horas sin viento del norte; la transferencia entre estaciones no sirve en Chalsos (un mes a 90°). **Uso:** guía general para promedios de semanas o meses, no valor por hora. Limitaciones: arrastra el error de la reconstrucción usada como etiqueta y deja de valer si cambia el régimen (traslado, torre girada). Scripts de la prueba fuera del repositorio (no se reprodujeron como módulo).
+
 ## 4. Qué implica para la base y `anglo_reporte`
 
 **Recomendación:** incorporar `WindDir_D1_WVT` (y `WS_ms_S_WVT`, `WindDir_SD1_WVT`) a `database_duck` desde las tablas de 60 min y hacer que `anglo_reporte` tome `WindDir_D1_WVT` como dirección en las estaciones donde exista. La velocidad no cambia: en Cortadera 5 min, `WS_ms_S_WVT` coincide con `WS_ms_Avg` en el 99.98 % de los registros (no se midió en las demás).

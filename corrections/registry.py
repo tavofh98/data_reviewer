@@ -9,6 +9,10 @@ Tipos:
   la hora se recalcula como media vectorial de los registros girados; si no, se gira la media
   horaria de la base.
 - "exclusion": la celda queda vacía en la vista; el valor crudo se conserva en la tabla de ajustes.
+- "vector_rescue": la dirección horaria (media aritmética del logger) se sustituye por la media
+  vectorial reconstruida desde los 5 min con wind_vector/rescue.py, que corrige las mezclas del
+  norte. Lee el fichero ya calculado; las horas sin reconstrucción conservan el valor crudo.
+`end` = None deja el intervalo abierto: cubre también los datos que entren después.
 """
 from __future__ import annotations
 
@@ -21,9 +25,9 @@ class Correction:
     station_id: str
     variable: str
     start: str               # exclusivo, final de hora
-    end: str                 # inclusivo, final de hora
-    kind: str                # "rotation" | "exclusion"
-    parameter: float | None  # grados para "rotation"; None para "exclusion"
+    end: str | None          # inclusivo, final de hora; None = abierto
+    kind: str                # "rotation" | "exclusion" | "vector_rescue"
+    parameter: float | None  # grados para "rotation"; None para los demás
     reason: str
     reference: str
 
@@ -46,4 +50,12 @@ CORRECTIONS: tuple[Correction, ...] = (
         "exclusion", None,
         "Cable cortado y WindSonic retirado antes de instalar el ClimaVUE: orientación desconocida.",
         "FINDINGS.md §9, Mina_Norte frente a Oeste 1"),
+    Correction(
+        "CH-vector-rescue", "Chalsos", "WindDir_Avg", "2024-03-06 00:00", None,
+        "vector_rescue", None,
+        "El logger guarda la dirección horaria como media aritmética de ángulos: si el viento cruza el N "
+        "en la hora, el valor cae hacia 180°. Se sustituye por la media vectorial reconstruida desde el "
+        "Table3 de 5 min con north_mixture (el aritmético se aleja > 45° en el 22–36 % de las horas de 7–9 h). "
+        "No corrige orientación: el sensor mide bien.",
+        "FINDINGS.md §9, Chalsos: revisión del 2026-11-13"),
 )

@@ -10,8 +10,11 @@ La base cruda (database_duck/anglo_ambiental.db) solo se lee. corrections.db con
 Marca `north_risk`: algún registro de la hora, en el marco del sensor sin girar, está a menos de
 NORTH_WINDOW° de 0/360. Una media aritmética del logger que cruzó ese corte queda falsa y girarla
 no la arregla (FINDINGS.md §9).
+Marca `north_mixture` (tipo "vector_rescue"): en la hora hay registros de 5 min que el modelo tomó
+como mezcla del norte y sustituyó; son las horas menos seguras de la reconstrucción.
 
 Ejecutar desde explorar_qaqc: uv run python -m corrections.build_corrections
+Si el registro tiene intervenciones "vector_rescue", antes: uv run python -m wind_vector.rescue
 """
 from __future__ import annotations
 
@@ -31,6 +34,9 @@ from stations import DB_PATH  # noqa: E402
 REFERENCES = Path(__file__).resolve().parents[2] / "references"
 # Registros de 5 min por estación (TOA5): permiten recalcular la hora como media vectorial.
 FIVE_MIN_SOURCES = {"Mina_Norte": REFERENCES / "AAQ_Est_Mina_Norte_CR310_Table3.dat"}
+# Salidas de wind_vector/rescue.py (misma convención de nombre que su output_path; no se importa
+# para no cargar el modelo al construir la base).
+RESCUE_DIR = Path(__file__).resolve().parents[1] / "wind_vector" / "output"
 WS, WD = "WS_ms_Avg", "WindDir_Avg"
 NORTH_WINDOW = 30.0
 MIN_RECORDS = 9   # de 12 registros de 5 min por hora
@@ -68,12 +74,17 @@ def hourly_vector_mean(five_min: pd.DataFrame, rotation: float) -> pd.DataFrame:
     return out[out["records"] >= MIN_RECORDS]
 
 
+def end_timestamp(correction: Correction) -> pd.Timestamp:
+    """Final del intervalo; uno abierto (end = None) llega hasta el último dato."""
+    return pd.Timestamp.max if correction.end is None else pd.Timestamp(correction.end)
+
+
 def load_raw(con, correction: Correction) -> pd.Series:
     """Valores crudos no vacíos de la variable en (start, end]."""
     df = con.execute(
         f'SELECT timestamp, "{correction.variable}" AS value FROM raw.meteorologia '
-        "WHERE estacion_id = ? AND timestamp > ? AND timestamp <= ? ORDER BY timestamp",
-        [correction.station_id, correction.start, correction.end]).df()
+        "WHERE estacion_id = ? AND timestamp > ? AND (? IS NULL OR timestamp <= ?) ORDER BY timestamp",
+        [correction.station_id, correction.start, correction.end, correction.end]).df()
     return df.drop_duplicates("timestamp", keep="last").set_index("timestamp")["value"].dropna()
 
 
@@ -98,6 +109,19 @@ def exclusion_adjustments(raw: pd.Series) -> pd.DataFrame:
     return pd.DataFrame({"raw_value": raw, "corrected_value": np.nan, "method": "excluded", "flag": "excluded"})
 
 
+def vector_rescue_adjustments(correction: Correction, raw: pd.Series) -> pd.DataFrame:
+    """Horas con dirección reconstruida por wind_vector/rescue.py; las demás no se tocan."""
+    path = RESCUE_DIR / f"rescue_{correction.station_id.lower()}.csv.gz"
+    if not path.exists():
+        raise FileNotFoundError(f"{correction.correction_id}: falta {path}; "
+                                f"ejecutar uv run python -m wind_vector.rescue {correction.station_id}")
+    rescue = pd.read_csv(path, parse_dates=["TIMESTAMP"], index_col="TIMESTAMP")
+    rescue = rescue.reindex(raw.index).dropna(subset=["direction"])
+    return pd.DataFrame({
+        "raw_value": raw.loc[rescue.index], "corrected_value": rescue["direction"],
+        "method": "5min_north_mixture", "flag": np.where(rescue["frac_h1"] > 0, "north_mixture", None)})
+
+
 def check_no_overlap(corrections: tuple[Correction, ...]) -> None:
     by_key: dict[tuple[str, str], list[Correction]] = {}
     for c in corrections:
@@ -105,7 +129,7 @@ def check_no_overlap(corrections: tuple[Correction, ...]) -> None:
     for key, items in by_key.items():
         items.sort(key=lambda c: pd.Timestamp(c.start))
         for prev, nxt in zip(items, items[1:]):
-            if pd.Timestamp(prev.end) > pd.Timestamp(nxt.start):
+            if end_timestamp(prev) > pd.Timestamp(nxt.start):
                 raise ValueError(f"{key}: {prev.correction_id} se solapa con {nxt.correction_id}")
 
 
@@ -117,6 +141,8 @@ def build_adjustments(con) -> pd.DataFrame:
             part = rotation_adjustments(c, raw)
         elif c.kind == "exclusion":
             part = exclusion_adjustments(raw)
+        elif c.kind == "vector_rescue":
+            part = vector_rescue_adjustments(c, raw)
         else:
             raise ValueError(f"{c.correction_id}: tipo desconocido {c.kind!r}")
         part = part.rename_axis("timestamp").reset_index()
